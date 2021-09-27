@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # # coding=latin-1
-from geometry_msgs.msg import Point, Quaternion, Pose
+from geometry_msgs.msg import Point, Quaternion, Pose, PointStamped
 from actionlib_msgs.msg import *
 import numpy as np
 import math
@@ -8,10 +8,11 @@ from scipy.spatial.transform import Rotation as rot
 from tf import transformations
 
 import copy
+import rospy
 
 class MyPoint(Point):
     def __init__(self, pos=(0.0, 0.0, 0.0)):
-        if type(pos) == Point:
+        if type(pos) == Point or type(pos) == MyPoint:
             self._asArray = np.array(pos.__reduce__()[2])
         else:
             self._asArray = np.array(pos)
@@ -38,6 +39,17 @@ class MyPoint(Point):
 
     def asArray(self):
         return np.array([self.x, self.y, self.z, 0])
+
+class MyPointStamped(PointStamped):
+    def __init__(self, pos=(0.0, 0.0, 0.0), frame_id=""):
+        super(MyPointStamped, self).__init__()
+        self.point = MyPoint(pos)
+        self.header.frame_id = frame_id
+        self.header.stamp = rospy.Time.now()
+
+    def __add__(self, p2):
+        p = self.point + p2.point
+        return MyPointStamped(p, self.header.frame_id)
 
 
 class MyOrient(Quaternion):
@@ -174,6 +186,8 @@ def getNearestOrientation(goalOrient=MyOrient(), preGripOrient=[MyOrient()]):
     return idxNearest, deltaOrientOut, deltaZOut
 
 if __name__ == '__main__':
+    rospy.init_node("Test_geom")
+
     p1 = MyPoint((1, 2, 3))
     p2 = MyPoint((1, 2, 3))
 
@@ -198,3 +212,10 @@ if __name__ == '__main__':
     
     # panda_goal = PandaGoals(p1, a1)
     # print(panda_goal)
+
+    p_stamped = MyPointStamped((1, 2, 3))
+    p_stamped2 = MyPointStamped((1, 2, 3))
+
+    p_stamped_res = p_stamped+p_stamped2
+
+    print(p_stamped_res)

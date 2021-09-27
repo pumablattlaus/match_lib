@@ -12,13 +12,13 @@ import copy
 class MyPoint(Point):
     def __init__(self, pos=(0.0, 0.0, 0.0)):
         if type(pos) == Point:
-            self.asArray = np.array(pos.__reduce__()[2])
+            self._asArray = np.array(pos.__reduce__()[2])
         else:
-            self.asArray = np.array(pos)
-        super(MyPoint, self).__init__(*(self.asArray))
+            self._asArray = np.array(pos)
+        super(MyPoint, self).__init__(*(self._asArray))
 
         # 1 hinten anfuegen
-        self.asArray = np.append(self.asArray, 0)
+        self._asArray = np.append(self._asArray, 0)
 
     def __add__(self, p2):
         p_out = MyPoint()
@@ -35,6 +35,9 @@ class MyPoint(Point):
         p_out.z = self.z - p2.z
 
         return p_out
+
+    def asArray(self):
+        return np.array([self.x, self.y, self.z, 0])
 
 
 class MyOrient(Quaternion):
@@ -78,13 +81,15 @@ class MyPose(Pose):
     
     def rotateVector(self, vec=None, rot=None):
         if vec == None:
-            vec = self.position.asArray
+            vec = self.position.asArray()
         if rot == None:
-            rot = self.orientation.asArray
-        rot_conj = transformations.quaternion_conjugate(rot)
-        trans = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, vec), rot) [:3]
-        return MyPoint(trans)
+            rot = self.orientation.asArray()
+        return rotateVector(vec, rot)
 
+def rotateVector(vec=(0.0,0.0,1.0), rot=(0.0,0.0,0.0,1.0)):
+    rot_conj = transformations.quaternion_conjugate(rot)
+    trans = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, vec), rot) [:3]
+    return MyPoint(trans)
 
 def rotateToXAxis(points, axis=(0,1), transpose = False):
     """Rotate list of points to from X-Axis to new axis 

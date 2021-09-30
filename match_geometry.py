@@ -117,7 +117,7 @@ def rotateToXAxis(points, axis=(0,1), transpose = False):
     if points[0] is None: return None
 
     axis = axis/np.linalg.norm(axis)
-    R = np.mat([[axis[0],axis[1]],
+    R = np.array([[axis[0],axis[1]],
                 [-axis[1],axis[0]]])
     if transpose: R = R.T
     contour_new = np.array(np.matmul(points,R))

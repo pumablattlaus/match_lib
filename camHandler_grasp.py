@@ -47,7 +47,20 @@ class CameraHandler(object):
                 p_msg = geom_msg.PointStamped()
                 p_msg.header = msg.header
                 p_msg.point.x, p_msg.point.y, p_msg.point.z = p
-                p_msg = self.listener.transformPoint(self.toFrame, p_msg)
+
+                # Transform point to toFrame:
+                try:
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
+                    p_msg = self.listener.transformPoint(self.toFrame, p_msg)
+                except: # ExtrapolationException:
+                    self.syncTime.publish(std_msg.Bool(True))
+                    time.sleep(0.5)
+                    now = rospy.Time.now()
+                    self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
+                    p_msg = self.listener.transformPoint(self.toFrame, p_msg)
+
+                # p_msg = self.listener.transformPoint(self.toFrame, p_msg)
                 p = p_msg.point
             self.graspP.append(MyPoint(p))
 

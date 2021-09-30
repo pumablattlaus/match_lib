@@ -154,7 +154,7 @@ class PandaMove(object):
         
         poseRel = MyPose(tuple(pos), tuple(rot))
         poseRel = pose-poseRel
-        self.moveLin(poseRel)
+        self.moveLin(poseRel, vel=0.5)
             
     def moveLin(self, pose=MyPose(), vel=1):
         waypoints = []

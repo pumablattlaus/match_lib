@@ -68,7 +68,7 @@ class PandaGripper(object):
         self.move(0.00,0.001,0.01, force=0.01)
         while not self.gotResult:
             time.sleep(0.1)
-        if not gripper.success: # self.success?
+        if not self.success:    #gripper.success:
             print("Object found!")
             # ToDO: /franka_gripper/joint_states .position for comparison if obj lost
             self.move(0.0,0.2,0.2, force=50)

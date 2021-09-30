@@ -25,6 +25,9 @@ class CameraHandler(object):
         self.listener = listener
         self.toFrame = toFrame
 
+        # sync time between miranda and panda
+        self.syncTime = rospy.Publisher("/syncTime", std_msg.Bool, queue_size=1)
+
     def run(self, boolVal=True):
         """Starts/Stops gripPoints detection of camera script
 

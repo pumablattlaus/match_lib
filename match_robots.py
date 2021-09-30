@@ -40,9 +40,9 @@ class PandaGoals(object):
         return rel_pose
     
     def transfPoseBase(self, pose=MyPose()):
-        q = pose.orientation.asArray
+        q = pose.orientation.asArray()
         q_conj = transformations.quaternion_conjugate(q)
-        t = pose.position.asArray
+        t = pose.position.asArray()
         trans = transformations.quaternion_multiply(transformations.quaternion_multiply(q_conj, t), q) [:3]
         # trans = q_conj*t*q
         

@@ -12,8 +12,6 @@ import copy
 import tf
 import tf2_ros
 
-import sys
-sys.path.append('../match_lib/')
 from match_geometry import MyPoint
 
 class CameraHandler(object):

@@ -26,7 +26,7 @@ class CameraHandler(object):
         self.toFrame = toFrame
 
         # sync time between miranda and panda
-        self.syncTime = rospy.Publisher("/syncTime", std_msg.Bool, queue_size=1)
+        self.syncTime = rospy.Publisher("/syncTime", std_msgs.msg.Bool, queue_size=1)
 
     def run(self, boolVal=True):
         """Starts/Stops gripPoints detection of camera script
@@ -71,7 +71,7 @@ class CameraHandler(object):
             self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
             p_msg = self.listener.transformPoint(self.toFrame, p_msg)
         except: # ExtrapolationException:
-            self.syncTime.publish(std_msg.Bool(True))
+            self.syncTime.publish(std_msgs.msg.Bool(True))
             time.sleep(0.5)
             now = rospy.Time.now()
             self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))

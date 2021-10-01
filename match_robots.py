@@ -139,18 +139,23 @@ class PandaMove(object):
         else:
             self.movePose(poseRel)
             
-    def movePoseTotalViaHand(self, pose=MyPose()):
-        """ using transformation from hand to map to move remaining distance"""
+    def movePoseTotalViaHand(self, pose=MyPose(), toFrame="map"):
+        """using transformation from hand to toFrame(map) to move remaining distance
+
+        Args:
+            pose (MyPose()): Pose to move to in toFrame frame.
+            toFrame (str, optional): Reference Frame. Defaults to "map".
+        """
         try:
             now = rospy.Time.now()
-            self.listener.waitForTransform(self.ns+"/panda_hand", "map", now, rospy.Duration(4.0))
-            (pos, rot) = self.listener.lookupTransform(self.ns+"/panda_hand", "map", now)
+            self.listener.waitForTransform(self.ns+"/panda_hand", toFrame, now, rospy.Duration(4.0))
+            (pos, rot) = self.listener.lookupTransform(self.ns+"/panda_hand", toFrame, now)
         except: # ExtrapolationException:
             self.syncTime.publish(std_msg.Bool(True))
             time.sleep(0.5)
             now = rospy.Time.now()
-            self.listener.waitForTransform(self.ns+"/panda_hand", "map", now, rospy.Duration(4.0))
-            (pos, rot) = self.listener.lookupTransform(self.ns+"/panda_hand", "map", now)
+            self.listener.waitForTransform(self.ns+"/panda_hand", toFrame, now, rospy.Duration(4.0))
+            (pos, rot) = self.listener.lookupTransform(self.ns+"/panda_hand", toFrame, now)
         
         poseRel = MyPose(tuple(pos), tuple(rot))
         poseRel = pose-poseRel

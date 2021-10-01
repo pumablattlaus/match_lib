@@ -50,22 +50,37 @@ class CameraHandler(object):
                 p_msg = geom_msg.PointStamped()
                 p_msg.header = msg.header
                 p_msg.point.x, p_msg.point.y, p_msg.point.z = p
-
-                # Transform point to toFrame:
-                try:
-                    now = rospy.Time.now()
-                    self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
-                    p_msg = self.listener.transformPoint(self.toFrame, p_msg)
-                except: # ExtrapolationException:
-                    self.syncTime.publish(std_msg.Bool(True))
-                    time.sleep(0.5)
-                    now = rospy.Time.now()
-                    self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
-                    p_msg = self.listener.transformPoint(self.toFrame, p_msg)
-
-                # p_msg = self.listener.transformPoint(self.toFrame, p_msg)
-                p = p_msg.point
+          
+                p = self.transformPointMsgToFrame(self.toFrame, p_msg)
+                
             self.graspP.append(MyPoint(p))
+
+    def transformPointMsgToFrame(self, frame, p_msg=geom_msg.PointStamped()):
+        """transforms point from PointStamped to frame_id.
+
+        Args:
+            frame (string): Frame to trabsform into
+            p_msg (geom_msg.PointStamped()): Point to transform with frameid in header.
+
+        Returns:
+            [Point]: 
+        """
+        # Transform point to toFrame:
+        try:
+            now = rospy.Time.now()
+            self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
+            p_msg = self.listener.transformPoint(self.toFrame, p_msg)
+        except: # ExtrapolationException:
+            self.syncTime.publish(std_msg.Bool(True))
+            time.sleep(0.5)
+            now = rospy.Time.now()
+            self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
+            p_msg = self.listener.transformPoint(self.toFrame, p_msg)
+
+        # p_msg = self.listener.transformPoint(self.toFrame, p_msg)
+        p = p_msg.point
+        return p
+
 
     def getGraspP(self):
         """Starts/Stops detection and returns the 2 graspPoints (transformed to "toFrame")

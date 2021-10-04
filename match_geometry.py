@@ -54,7 +54,7 @@ class MyPointStamped(PointStamped):
 
 class MyOrient(Quaternion):
     def __init__(self, quatern=(0.0, 0.0, 0.0, 1.0)):
-        if type(quatern) == Quaternion:
+        if type(quatern) == Quaternion or type(quatern) == MyOrient:
             self._asArray = np.array(quatern.__reduce__()[2])
         else:
             self._asArray = np.array(quatern)

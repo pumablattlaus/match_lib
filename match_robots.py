@@ -165,7 +165,7 @@ class PandaMove(object):
         waypoints = []
         wpose = MyPose(self.move_group.get_current_pose().pose.position, self.move_group.get_current_pose().pose.orientation)
         waypoints.append(copy.deepcopy(wpose))  # current pose
-        wpose += pose
+        wpose += pose   #append relative pose to current pose
         waypoints.append(copy.deepcopy(wpose))
         (plan, fraction) = self.move_group.compute_cartesian_path(
             waypoints,  # waypoints to follow

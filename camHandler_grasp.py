@@ -68,14 +68,14 @@ class CameraHandler(object):
         # Transform point to toFrame:
         try:
             now = rospy.Time.now()
-            self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
-            p_msg_new = self.listener.transformPoint(self.toFrame, p_msg)
+            self.listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
+            p_msg_new = self.listener.transformPoint(frame, p_msg)
         except: # ExtrapolationException:
             self.syncTime.publish(std_msgs.msg.Bool(True))
             time.sleep(0.5)
             now = rospy.Time.now()
-            self.listener.waitForTransform(p_msg.header.frame_id, self.toFrame, now, rospy.Duration(4.0))
-            p_msg_new = self.listener.transformPoint(self.toFrame, p_msg)
+            self.listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
+            p_msg_new = self.listener.transformPoint(frame, p_msg)
 
         p = p_msg_new.point
         return p

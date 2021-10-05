@@ -87,12 +87,46 @@ class CameraHandler(object):
         Returns:
             list(MyPoint): Grasp points from edge detection
         """
-        while len(self.graspP) != 2:
+        while len(self.graspP) != 2 and not rospy.is_shutdown():
             self.run()
             time.sleep(0.5)
         graspP = copy.copy(self.graspP)
         self.run(False)
         return graspP
+
+    def getValidGraspP(self, minH=0.05, minD=0.0):
+        """Checks grasp Points if in front of hand (cam.toFrame) and above ground (map)
+
+        Args:
+            minH (float, optional): Minimum Height above z=0 in map Frame. Defaults to 0.05.
+            minD (float, optional): Minimum Distance to z=0 in self.toFrame (panda_hand). Defaults to 0.0
+
+        Returns:
+            MyPoint p: actual graspPoint
+            MyPoint p_hand_pre: p with Z=0 (no movement in Z for cam.toFrame (hand))
+            MyPoint p_map: p_hand_pre in map frame
+
+
+        """
+         while not rospy.is_shutdown():
+            graspPoints = self.getGraspP()   #in panda_hand-frame
+            # Z zeigt aus Greifer raus
+            p = MyPoint(((graspPoints[0]+graspPoints[1]).asArray()[:3])/2.0)
+            if p.z < minD:
+                rospy.loginfo("Z Value is smaller 0: GraspPoint is behind gripper!")
+                continue
+            # change position: graspPosition in front of gripper (dont move in Z)
+            p_hand_pre = MyPointStamped(copy.copy(p), self.toFrame)
+            p_hand_pre.point.z = 0
+
+
+            p_map = self.transformPointMsgToFrame("map", p_hand_pre)
+            if p_map.z < minH:
+                rospy.loginfo("Z Value is small: GraspPoint is near floor")
+                continue
+            
+             # found valid grasp point
+            return p, MyPoint(p_hand_pre.point), MyPoint(p_map)
 
 if __name__ == '__main__':
     

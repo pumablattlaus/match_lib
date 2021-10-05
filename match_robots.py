@@ -23,8 +23,8 @@ class PandaGoals(object):
             axis_goal = [-0.09165325995045537, -0.1307664982896102, -0.08691672911214791, -1.2039535559629443,
                          -0.058938511593474276, 1.7850536203251945, -1.5727488613542584]
         # self.pose_relative = pose_relative
-        self.pose_relative_pre = self.transfPoseBase(pose_relative_pre)
-        self.pose_relative_grip = self.transfPoseBase(pose_relative_grip)
+        self.pose_relative_pre = pose_relative_pre
+        self.pose_relative_grip = pose_relative_grip
         
         self.axis_goal = axis_goal
         self.movement = None

@@ -223,6 +223,32 @@ def getTransformation(listener, fromFrame, toFrame, syncTimePublisher):
 
     return pos,rot
 
+
+def transformPointMsgToFrame(listener, frame, syncTimePublisher, p_msg=geom_msg.PointStamped()):
+        """transforms point from PointStamped to frame_id.
+
+        Args:
+            frame (string): Frame to trabsform into
+            p_msg (geom_msg.PointStamped()): Point to transform with frameid in header.
+
+        Returns:
+            [Point]: 
+        """
+        # Transform point to toFrame:
+        try:
+            now = rospy.Time.now()
+            listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
+            p_msg_new = listener.transformPoint(frame, p_msg)
+        except: # ExtrapolationException:
+            syncTimePublisher.publish(std_msgs.msg.Bool(True))
+            time.sleep(0.5)
+            now = rospy.Time.now()
+            listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
+            p_msg_new = listener.transformPoint(frame, p_msg)
+
+        p = p_msg_new.point
+        return p
+
 if __name__ == '__main__':
     rospy.init_node("Test_geom")
 

@@ -12,6 +12,7 @@ import copy
 import tf
 import tf2_ros
 
+import match_geometry
 from match_geometry import MyPoint
 
 class CameraHandler(object):
@@ -66,19 +67,7 @@ class CameraHandler(object):
             [Point]: 
         """
         # Transform point to toFrame:
-        try:
-            now = rospy.Time.now()
-            self.listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
-            p_msg_new = self.listener.transformPoint(frame, p_msg)
-        except: # ExtrapolationException:
-            self.syncTime.publish(std_msgs.msg.Bool(True))
-            time.sleep(0.5)
-            now = rospy.Time.now()
-            self.listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
-            p_msg_new = self.listener.transformPoint(frame, p_msg)
-
-        p = p_msg_new.point
-        return p
+        return match_geometry.transformPointMsgToFrame(self.listener, frame, self.syncTime, p_msg)
 
 
     def getGraspP(self):

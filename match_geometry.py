@@ -105,6 +105,20 @@ def rotateVector(vec=(0.0,0.0,1.0), rot=(0.0,0.0,0.0,1.0)):
     trans = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, vec), rot) [:3]
     return MyPoint(trans)
 
+def rotationDiffRotated(rot_diff=(0.0,0.0,0.0, 1.0), rot=(0.0,0.0,0.0,1.0)):
+    """Express orientation in different frame
+
+    Args:
+        rot_diff (tuple, optional): Rotation difference to rotate.
+        rot (tuple): Rotation from frame of rot_diff to goalFrame.
+
+    Returns:
+        tuple (quaternion): rot_diff rotated by rot
+    """
+    rot_conj = transformations.quaternion_conjugate(rot)
+    rot_diff_rotated = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, rot_diff), rot)
+    return rot_diff_rotated
+
 def rotateToXAxis(points, axis=(0,1), transpose = False):
     """Rotate list of points to from X-Axis to new axis 
 
@@ -241,6 +255,14 @@ if __name__ == '__main__':
     print(p_stamped_res)
 
     # Orientation:
-    o = MyOrient((0, 0, 0.7071068, 0.7071068))
-    print(rotateVector((1,0,0,1), o))
+    o_diff = MyOrient((0, 0, 0.7071068, 0.7071068))
+    print(rotateVector((1,0,0,1), o_diff.asArray()))
+
+    o = MyOrient()# 0°
+    o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())
+    print(o_diff_rot) # 0°
+
+    o = MyOrient((0.7071068, 0, 0.0, 0.7071068))    # 45° um x
+    o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())
+    print(o_diff_rot)
 

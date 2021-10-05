@@ -224,7 +224,7 @@ def getTransformation(listener, fromFrame, toFrame, syncTimePublisher):
     return pos,rot
 
 
-def transformPointMsgToFrame(listener, frame, syncTimePublisher, p_msg=geom_msg.PointStamped()):
+def transformPointMsgToFrame(listener, syncTimePublisher, frame, p_msg=geom_msg.PointStamped()):
         """transforms point from PointStamped to frame_id.
 
         Args:

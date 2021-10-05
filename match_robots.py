@@ -150,14 +150,14 @@ class PandaMove(object):
         """
         try:
             now = rospy.Time.now()
-            self.listener.waitForTransform(self.ns+"/panda_hand", toFrame, now, rospy.Duration(4.0))
-            (pos, rot) = self.listener.lookupTransform(self.ns+"/panda_hand", toFrame, now)
+            self.listener.waitForTransform(toFrame, self.ns+"/panda_hand", now, rospy.Duration(4.0))
+            (pos, rot) = self.listener.lookupTransform(toFrame, self.ns+"/panda_hand", now)
         except: # ExtrapolationException:
             self.syncTime.publish(std_msg.Bool(True))
             time.sleep(0.5)
             now = rospy.Time.now()
-            self.listener.waitForTransform(self.ns+"/panda_hand", toFrame, now, rospy.Duration(4.0))
-            (pos, rot) = self.listener.lookupTransform(self.ns+"/panda_hand", toFrame, now)
+            self.listener.waitForTransform(toFrame, self.ns+"/panda_hand", now, rospy.Duration(4.0))
+            (pos, rot) = self.listener.lookupTransform(toFrame, self.ns+"/panda_hand", now)
         
         poseRel = MyPose(tuple(pos), tuple(rot))
         poseRel = pose-poseRel

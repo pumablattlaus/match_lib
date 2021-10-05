@@ -71,6 +71,8 @@ class PandaMove(object):
                                                        moveit_msgs.msg.DisplayTrajectory,
                                                        queue_size=20)
         
+        self.move_group.set_end_effector_link("panda_hand")
+        
         if listener is None:
             self.listener = tf.TransformListener()
         else:

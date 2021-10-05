@@ -2,12 +2,14 @@
 # # coding=latin-1
 from geometry_msgs.msg import Point, Quaternion, Pose, PointStamped
 from actionlib_msgs.msg import *
+import std_msgs.msg as std_msg
 import numpy as np
 import math
 from scipy.spatial.transform import Rotation as rot
 from tf import transformations
 
 import copy
+import time
 import rospy
 
 class MyPoint(Point):
@@ -185,6 +187,24 @@ def getNearestOrientation(goalOrient=MyOrient(), preGripOrient=[MyOrient()]):
             idxNearest = i
     return idxNearest, deltaOrientOut, deltaZOut
 
+
+def getTransformation(listener, fromFrame, toFrame, syncTimePublisher):
+    """
+    Express fromFrame in toFrame (transform fromFrame to toFrame)
+    """
+    try:
+        now = rospy.Time.now()
+        listener.waitForTransform(toFrame, fromFrame, now, rospy.Duration(4.0))
+        (pos, rot) = listener.lookupTransform(toFrame, fromFrame, now)
+    except:  # ExtrapolationException:
+        syncTimePublisher.publish(std_msg.Bool(True))
+        time.sleep(0.5)
+        now = rospy.Time.now()
+        listener.waitForTransform(toFrame, fromFrame, now, rospy.Duration(4.0))
+        (pos, rot) = listener.lookupTransform(toFrame, fromFrame, now)
+
+    return pos,rot
+
 if __name__ == '__main__':
     rospy.init_node("Test_geom")
 
@@ -219,3 +239,8 @@ if __name__ == '__main__':
     p_stamped_res = p_stamped+p_stamped2
 
     print(p_stamped_res)
+
+    # Orientation:
+    o = MyOrient((0, 0, 0.7071068, 0.7071068))
+    print(rotateVector((1,0,0,1), o))
+

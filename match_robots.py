@@ -148,23 +148,34 @@ class PandaMove(object):
             pose (MyPose()): Pose to move to in toFrame frame.
             toFrame (str, optional): Reference Frame. Defaults to "map".
         """
-        try:
-            now = rospy.Time.now()
-            self.listener.waitForTransform(toFrame, self.ns+"/panda_hand", now, rospy.Duration(4.0))
-            (pos, rot) = self.listener.lookupTransform(toFrame, self.ns+"/panda_hand", now)
-        except: # ExtrapolationException:
-            self.syncTime.publish(std_msg.Bool(True))
-            time.sleep(0.5)
-            now = rospy.Time.now()
-            self.listener.waitForTransform(toFrame, self.ns+"/panda_hand", now, rospy.Duration(4.0))
-            (pos, rot) = self.listener.lookupTransform(toFrame, self.ns+"/panda_hand", now)
-        
+        # try:
+        #     now = rospy.Time.now()
+        #     self.listener.waitForTransform(toFrame, self.ns+"/panda_hand", now, rospy.Duration(4.0))
+        #     (pos, rot) = self.listener.lookupTransform(toFrame, self.ns+"/panda_hand", now)
+        # except: # ExtrapolationException:
+        #     self.syncTime.publish(std_msg.Bool(True))
+        #     time.sleep(0.5)
+        #     now = rospy.Time.now()
+        #     self.listener.waitForTransform(toFrame, self.ns+"/panda_hand", now, rospy.Duration(4.0))
+        #     (pos, rot) = self.listener.lookupTransform(toFrame, self.ns+"/panda_hand", now)
+        pos,rot = getTransformation(self.listener, self.ns+"/panda_hand", toFrame, self.syncTime)
+
         poseRel = MyPose(tuple(pos), tuple(rot))
-        poseRel = pose-poseRel
-        self.moveLin(poseRel, vel=0.5)
+        poseRel = pose-poseRel  # pose diff in panda_hand frame
+
+        self.moveLin(poseRel, vel=0.5, inFrame=self.ns + "/panda_hand")
             
-    def moveLin(self, pose=MyPose(), vel=1):
+    def moveLin(self, pose=MyPose(), vel=1, inFrame="/miranda/panda/panda_hand"):
+        """ moveLinear in inFrame (panda_hand)"""
+
+        # Transform Pose difference to panda_link0 (only rotate vector)
+        _, rot_0_hand = getTransformation(self.listener, self.ns + "/panda_link0", inFrame,
+                                          self.syncTime)
+        diffVec = rotateVector(pose.position, rot_0_hand)
+        diffRot =
+
         waypoints = []
+        # wpose is in panda_link0-frame (planning frame)
         wpose = MyPose(self.move_group.get_current_pose().pose.position, self.move_group.get_current_pose().pose.orientation)
         waypoints.append(copy.deepcopy(wpose))  # current pose
         wpose += pose   #append relative pose to current pose

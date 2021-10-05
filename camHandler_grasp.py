@@ -102,8 +102,8 @@ class CameraHandler(object):
             minD (float, optional): Minimum Distance to z=0 in self.toFrame (panda_hand). Defaults to 0.0
 
         Returns:
-            MyPoint p: actual graspPoint
-            MyPoint p_hand_pre: p with Z=0 (no movement in Z for cam.toFrame (hand))
+            MyPoint p: actual graspPoint in self.toFrame (hand)
+            MyPoint p_hand_pre: p with Z=0 (no movement in Z for self.toFrame (hand: Z=grip))
             MyPoint p_map: p_hand_pre in map frame
 
 

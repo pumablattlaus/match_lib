@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # # coding=latin-1
-from geometry_msgs.msg import Point, Quaternion, Pose, PointStamped
+from geometry_msgs.msg import Point, Quaternion, Pose, PointStamped, PoseStamped
 from actionlib_msgs.msg import *
 import std_msgs.msg as std_msg
 import numpy as np
@@ -223,31 +223,77 @@ def getTransformation(listener, fromFrame, toFrame, syncTimePublisher):
 
     return pos,rot
 
+def _transformMsgToFrame(listener, syncTimePublisher, frame, p_msg, func_transf=None):
+    """Transform Stamped Msg to frame
+
+    Args:
+        listener (tf): listener for transformation
+        syncTimePublisher: publisher to syncTime
+        frame (string): Frame to transform into
+        p_msg: msg to Transform with frameid in header
+        func_transf (function): i.e. listener.transformPoint
+
+    Returns:
+        p_msg_new: transformed msg
+    """
+    if func_transf is None:
+        if type(p_msg) == PointStamped: func_transf = listener.transformPoint
+        elif type(p_msg) == PoseStamped: func_transf = listener.transformPose
+        else: return None
+    try:
+        now = rospy.Time.now()
+        listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
+        p_msg_new = func_transf(frame, p_msg)
+    except: # ExtrapolationException:
+        syncTimePublisher.publish(std_msgs.msg.Bool(True))
+        time.sleep(0.5)
+        now = rospy.Time.now()
+        listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
+        p_msg_new = func_transf(frame, p_msg)
+    return p_msg_new
 
 def transformPointMsgToFrame(listener, syncTimePublisher, frame, p_msg=geom_msg.PointStamped()):
-        """transforms point from PointStamped to frame_id.
+    """transforms point from PointStamped to frame.
 
-        Args:
-            frame (string): Frame to trabsform into
-            p_msg (geom_msg.PointStamped()): Point to transform with frameid in header.
+    Args:
+        listener (tf): listener for transformation
+        syncTimePublisher: publisher to syncTime
+        frame (string): Frame to transform into
+        p_msg (geom_msg.PointStamped()): Point to transform with frameid in header.
 
-        Returns:
-            [Point]: 
-        """
-        # Transform point to toFrame:
-        try:
-            now = rospy.Time.now()
-            listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
-            p_msg_new = listener.transformPoint(frame, p_msg)
-        except: # ExtrapolationException:
-            syncTimePublisher.publish(std_msgs.msg.Bool(True))
-            time.sleep(0.5)
-            now = rospy.Time.now()
-            listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
-            p_msg_new = listener.transformPoint(frame, p_msg)
+    Returns:
+        [Point]: 
+    """
+    # Transform point to toFrame: TODO: replace with _transformMsgToFrame
+    try:
+        now = rospy.Time.now()
+        listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
+        p_msg_new = listener.transformPoint(frame, p_msg)
+    except: # ExtrapolationException:
+        syncTimePublisher.publish(std_msgs.msg.Bool(True))
+        time.sleep(0.5)
+        now = rospy.Time.now()
+        listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
+        p_msg_new = listener.transformPoint(frame, p_msg)
 
-        p = p_msg_new.point
-        return p
+    p = p_msg_new.point
+    return p
+
+def transformPoseMsgToFrame(listener, syncTimePublisher, frame, p_msg=geom_msg.PoseStamped()):
+    """transforms point from PointStamped to frame.
+
+    Args:
+        listener (tf): listener for transformation
+        syncTimePublisher: publisher to syncTime
+        frame (string): Frame to transform into
+        p_msg (geom_msg.PoseStamped()): pose to transform with frameid in header.
+
+    Returns:
+        [Pose]
+    """
+    p_msg_new = _transformMsgToFrame(listener, syncTimePublisher, frame, p_msg, listener.transformPose)
+    p = MyPose(p_msg_new.pose)
+    return p
 
 if __name__ == '__main__':
     rospy.init_node("Test_geom")

@@ -75,8 +75,12 @@ class MyOrient(Quaternion):
 
 class MyPose(Pose):
     def __init__(self, pos=(0.0, 0.0, 0.0), quatern=(0.0, 0.0, 0.0, 1.0)):
-        point = MyPoint(pos)
-        orient = MyOrient(quatern)
+        if type(pos) == Pose:
+            point = MyPoint(pos.position)
+            orient = MyOrient(pos.orientation)
+        else:
+            point = MyPoint(pos)
+            orient = MyOrient(quatern)
         super(MyPose, self).__init__(point, orient)
         self.position = point
         self.orientation = orient
@@ -237,6 +241,14 @@ if __name__ == '__main__':
     pose3.position = pose1.position + pose2.position
 
     print(pose3)
+
+    # MyPose from Pose:
+    pose = Pose()
+    pose.position.x, pose.position.y, pose.position.z = 1,2,3
+    pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w = 0,1,0,0
+
+    pose_my = MyPose(pose)
+    print(pose_my)
     
     
     p1 = MyPose((0.656036424314, -0.0597577841713, -0.103558385398), (-0.909901224555, 0.41268467068,
@@ -265,4 +277,3 @@ if __name__ == '__main__':
     o = MyOrient((0.7071068, 0, 0.0, 0.7071068))    # 45° um x
     o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())
     print(o_diff_rot)
-

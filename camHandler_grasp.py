@@ -97,7 +97,7 @@ class CameraHandler(object):
 
 
         """
-         while not rospy.is_shutdown():
+        while not rospy.is_shutdown():
             graspPoints = self.getGraspP()   #in panda_hand-frame
             # Z zeigt aus Greifer raus
             p = MyPoint(((graspPoints[0]+graspPoints[1]).asArray()[:3])/2.0)

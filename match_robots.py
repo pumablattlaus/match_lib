@@ -172,7 +172,8 @@ class PandaMove(object):
         _, rot_0_hand = getTransformation(self.listener, self.ns + "/panda_link0", inFrame,
                                           self.syncTime)
         diffVec = rotateVector(pose.position, rot_0_hand)
-        diffRot =
+        diffRot = rotationDiffRotated(pose.orientation, rot_0_hand)
+        pose = MyPose(diffVec, diffRot)
 
         waypoints = []
         # wpose is in panda_link0-frame (planning frame)

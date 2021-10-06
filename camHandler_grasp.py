@@ -13,7 +13,7 @@ import tf
 import tf2_ros
 
 import match_geometry
-from match_geometry import MyPoint
+from match_geometry import MyPoint, MyPointStamped
 
 class CameraHandler(object):
     """Handler to interact with Camera from other node
@@ -67,7 +67,7 @@ class CameraHandler(object):
             [Point]: 
         """
         # Transform point to toFrame:
-        return match_geometry.transformPointMsgToFrame(self.listener, frame, self.syncTime, p_msg)
+        return match_geometry.transformPointMsgToFrame(self.listener, self.syncTime, frame, p_msg)
 
 
     def getGraspP(self):

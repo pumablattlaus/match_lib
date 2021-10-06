@@ -252,7 +252,7 @@ def _transformMsgToFrame(listener, syncTimePublisher, frame, p_msg, func_transf=
         p_msg_new = func_transf(frame, p_msg)
     return p_msg_new
 
-def transformPointMsgToFrame(listener, syncTimePublisher, frame, p_msg=geom_msg.PointStamped()):
+def transformPointMsgToFrame(listener, syncTimePublisher, frame, p_msg=PointStamped()):
     """transforms point from PointStamped to frame.
 
     Args:
@@ -279,7 +279,7 @@ def transformPointMsgToFrame(listener, syncTimePublisher, frame, p_msg=geom_msg.
     p = p_msg_new.point
     return p
 
-def transformPoseMsgToFrame(listener, syncTimePublisher, frame, p_msg=geom_msg.PoseStamped()):
+def transformPoseMsgToFrame(listener, syncTimePublisher, frame, p_msg=PoseStamped()):
     """transforms point from PointStamped to frame.
 
     Args:

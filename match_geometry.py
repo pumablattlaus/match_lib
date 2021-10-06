@@ -207,8 +207,10 @@ def getNearestOrientation(goalOrient=MyOrient(), preGripOrient=[MyOrient()]):
 
 
 def getTransformation(listener, fromFrame, toFrame, syncTimePublisher):
-    """
-    Express fromFrame in toFrame (transform fromFrame to toFrame)
+    """Express fromFrame in toFrame (transform fromFrame to toFrame)
+
+    Returns:
+        pos, rot: output of listener.lookupTransform(toFrame, fromFrame, now)
     """
     try:
         now = rospy.Time.now()

@@ -171,8 +171,8 @@ class PandaMove(object):
         # Transform Pose difference to panda_link0 (only rotate vector)
         _, rot_0_hand = getTransformation(self.listener, self.ns + "/panda_link0", inFrame,
                                           self.syncTime)
-        diffVec = rotateVector(pose.position, rot_0_hand)
-        diffRot = rotationDiffRotated(pose.orientation, rot_0_hand)
+        diffVec = rotateVector(pose.position.asArray(), rot_0_hand)
+        diffRot = rotationDiffRotated(pose.orientation.asArray(), rot_0_hand)
         pose = MyPose(diffVec, diffRot)
 
         waypoints = []

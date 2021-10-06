@@ -16,6 +16,7 @@ import tf
 from tf import transformations
 from tf import ExtrapolationException
 
+
 class PandaGoals(object):
     def __init__(self, pose_relative_pre=MyPose(), axis_goal=[], pose_relative_grip=MyPose()):
         if len(axis_goal) < 7:
@@ -25,7 +26,7 @@ class PandaGoals(object):
         # self.pose_relative = pose_relative
         self.pose_relative_pre = pose_relative_pre
         self.pose_relative_grip = pose_relative_grip
-        
+
         self.axis_goal = axis_goal
         self.movement = None
 
@@ -38,19 +39,19 @@ class PandaGoals(object):
         rel_pose = grab_pose - base_pose
 
         return rel_pose
-    
+
     def transfPoseBase(self, pose=MyPose()):
         q = pose.orientation.asArray()
         q_conj = transformations.quaternion_conjugate(q)
         t = pose.position.asArray()
-        trans = transformations.quaternion_multiply(transformations.quaternion_multiply(q_conj, t), q) [:3]
+        trans = transformations.quaternion_multiply(transformations.quaternion_multiply(q_conj, t), q)[:3]
         # trans = q_conj*t*q
-        
+
         return MyPose(trans, q_conj)
 
 
 class PandaMove(object):
-    def __init__(self, group_name="panda_arm", ns='', robot_description="robot_description", listener = None):
+    def __init__(self, group_name="panda_arm", ns='', robot_description="robot_description", listener=None):
         moveit_commander.roscpp_initialize([])
         self.ns = ns
         self.syncTime = rospy.Publisher("/syncTime", std_msg.Bool, queue_size=1)
@@ -70,14 +71,14 @@ class PandaMove(object):
         display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path',
                                                        moveit_msgs.msg.DisplayTrajectory,
                                                        queue_size=20)
-        
+
         self.move_group.set_end_effector_link("panda_hand")
-        
+
         if listener is None:
             self.listener = tf.TransformListener()
         else:
             self.listener = listener
-        
+
         # Add Gripper:
         self.gripper = PandaGripper(ns)
 
@@ -119,28 +120,28 @@ class PandaMove(object):
             0.0)  # jump_threshold
         # plan = self.velocity_scale(plan, vel)
         self.move_group.execute(plan, wait=True)
-        
+
     def movePoseTotal(self, pose=MyPose(), linear=False):
         """ Not working properly use movePoseTotalViaHand instead"""
         try:
             now = rospy.Time.now()
-            self.listener.waitForTransform(self.ns+"/panda_link0", "map", now, rospy.Duration(4.0))
-            (pos, rot) = self.listener.lookupTransform(self.ns+"/panda_link0", "map", now)
-        except: # ExtrapolationException:
+            self.listener.waitForTransform(self.ns + "/panda_link0", "map", now, rospy.Duration(4.0))
+            (pos, rot) = self.listener.lookupTransform(self.ns + "/panda_link0", "map", now)
+        except:  # ExtrapolationException:
             self.syncTime.publish(std_msg.Bool(True))
             time.sleep(0.5)
             now = rospy.Time.now()
-            self.listener.waitForTransform(self.ns+"/panda_link0", "map", now, rospy.Duration(4.0))
-            (pos, rot) = self.listener.lookupTransform(self.ns+"/panda_link0", "map", now)
-        
+            self.listener.waitForTransform(self.ns + "/panda_link0", "map", now, rospy.Duration(4.0))
+            (pos, rot) = self.listener.lookupTransform(self.ns + "/panda_link0", "map", now)
+
         poseRel = MyPose(tuple(pos), tuple(rot))
-        poseRel = pose-poseRel
-        
+        poseRel = pose - poseRel
+
         if linear:
             self.movePoseLin(poseRel)
         else:
             self.movePose(poseRel)
-            
+
     def movePoseTotalViaHand(self, pose=MyPose(), toFrame="map"):
         """using transformation from hand to toFrame(map) to move remaining distance
 
@@ -158,13 +159,13 @@ class PandaMove(object):
         #     now = rospy.Time.now()
         #     self.listener.waitForTransform(toFrame, self.ns+"/panda_hand", now, rospy.Duration(4.0))
         #     (pos, rot) = self.listener.lookupTransform(toFrame, self.ns+"/panda_hand", now)
-        pos,rot = getTransformation(self.listener, self.ns+"/panda_hand", toFrame, self.syncTime)
+        pos, rot = getTransformation(self.listener, self.ns + "/panda_hand", toFrame, self.syncTime)
 
         poseRel = MyPose(tuple(pos), tuple(rot))
-        poseRel = pose-poseRel  # pose diff in panda_hand frame
+        poseRel = pose - poseRel  # pose diff in panda_hand frame
 
         self.moveLin(poseRel, vel=0.5, inFrame=self.ns + "/panda_hand")
-            
+
     def moveLin(self, pose=MyPose(), vel=1, inFrame="/miranda/panda/panda_hand"):
         """ moveLinear in inFrame (panda_hand)"""
 
@@ -177,9 +178,10 @@ class PandaMove(object):
 
         waypoints = []
         # wpose is in panda_link0-frame (planning frame)
-        wpose = MyPose(self.move_group.get_current_pose().pose.position, self.move_group.get_current_pose().pose.orientation)
+        wpose = MyPose(self.move_group.get_current_pose().pose.position,
+                       self.move_group.get_current_pose().pose.orientation)
         waypoints.append(copy.deepcopy(wpose))  # current pose
-        wpose += pose   #append relative pose to current pose
+        wpose += pose  # append relative pose to current pose
         waypoints.append(copy.deepcopy(wpose))
         (plan, fraction) = self.move_group.compute_cartesian_path(
             waypoints,  # waypoints to follow
@@ -190,7 +192,6 @@ class PandaMove(object):
             return self.move_group.execute(plan, wait=True)
         rospy.loginfo("No Plan found for lin movement")
         return False
-        
 
 
 class MirNav2Goal(object):
@@ -204,9 +205,9 @@ class MirNav2Goal(object):
 
         # rospy.init_node('my_moveGoal', anonymous=False)
         self.pub = rospy.Publisher(mir_prefix + '/move_base_simple/goal', PoseStamped, queue_size=1)
-        
+
         sub_status = rospy.Subscriber(mir_prefix + '/move_base/status', GoalStatusArray, self.status_callback)
-        
+
         # sub_odom = rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.odom_callback) # get the messages of the robot pose in frame
         if use_poseSub:
             self.mirPose = MyPose()
@@ -231,20 +232,19 @@ class MirNav2Goal(object):
         self.mirPose.position.x = float(pos.x)
         self.mirPose.position.y = float(pos.y)
         self.mirPose.position.z = float(pos.z)
-        
+
         ori = msg.orientation
         self.mirPose.orientation.w = float(ori.w)
         self.mirPose.orientation.x = float(ori.x)
         self.mirPose.orientation.y = float(ori.y)
         self.mirPose.orientation.z = float(ori.z)
-        
+
     def getMirPose(self):
         (pos, rot) = self.listener.lookupTransform('/map', '/miranda/mir/base_link', rospy.Time(0))
         mirPose = MyPose()
         mirPose.position = MyPoint(tuple(pos))
         mirPose.orientation = MyOrient(tuple(rot))
         return mirPose
-        
 
     def sendGoalPos(self, pose):
         self.ready = False
@@ -262,7 +262,7 @@ class MirNav2Goal(object):
         print("Position: ")
         x = float(input("X= "))
         y = float(input("Y= "))
-        
+
         if deg:
             print("Orientation: 0-360")
             z = float(input("Z= "))
@@ -314,37 +314,36 @@ if __name__ == '__main__':
     pose3.position = pose1.position + pose2.position
 
     print(pose3)
-    
-    
+
     p1 = MyPose((0.656036424314, -0.0597577841713, -0.103558385398), (-0.909901224555, 0.41268467068,
-                                                                        -0.023065127793, 0.0352011934197))
+                                                                      -0.023065127793, 0.0352011934197))
     a1 = [-0.198922703533319, 1.3937412735955756, 0.11749296106956011, -1.312658217933717, -0.1588243463469876,
-            2.762937863667806, 0.815807519980951]
-    
+          2.762937863667806, 0.815807519980951]
+
     panda_goal = PandaGoals(p1, a1)
     print(panda_goal)
-    
+
     # TEST PANDA:
     rospy.init_node("match_Robots")
-    
+
     mir_prefix = "/miranda/mir"
     panda_prefix = "/miranda/panda"
     panda_description = "/miranda/panda/robot_description"
     try:
-        panda = PandaMove(group_name="panda_arm", ns=panda_prefix, robot_description=panda_description, listener = None)
+        panda = PandaMove(group_name="panda_arm", ns=panda_prefix, robot_description=panda_description, listener=None)
     except RuntimeError:
-            mir_prefix = ""
-            panda_prefix = ""
-            panda_description = "robot_description"
-            panda = PandaMove(group_name="panda_arm", ns=panda_prefix, robot_description=panda_description, listener = None)
-    
+        mir_prefix = ""
+        panda_prefix = ""
+        panda_description = "robot_description"
+        panda = PandaMove(group_name="panda_arm", ns=panda_prefix, robot_description=panda_description, listener=None)
+
     panda.move_group.set_pose_reference_frame("/miranda/panda/panda_link0")
     target = [-0.198922703533319, 1.3937412735955756, 0.11749296106956011, -1.312658217933717, -0.1588243463469876,
-              2.762937863667806, 0.815807519980951] 
+              2.762937863667806, 0.815807519980951]
     panda.move_group.set_joint_value_target(target)
     plan = panda.move_group.plan()
     res = panda.move_group.execute(plan, wait=True)
-    
+
     # panda.move_group.set_pose_reference_frame("panda_link0")
     print("============ ROBOT POSE")
     p = panda.move_group.get_current_pose()

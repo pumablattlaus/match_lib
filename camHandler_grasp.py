@@ -5,7 +5,7 @@ import rospy
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
 import std_msgs.msg
-import geometry_msgs.msg as geom_msg 
+import geometry_msgs.msg as geom_msg
 
 import time
 import copy
@@ -15,9 +15,11 @@ import tf2_ros
 import match_geometry
 from match_geometry import MyPoint, MyPointStamped
 
+
 class CameraHandler(object):
     """Handler to interact with Camera from other node
     """
+
     def __init__(self, listener=None, toFrame="map"):
         self.pub_runCam = rospy.Publisher("/cam/run", std_msgs.msg.Bool, queue_size=1)
         self.subGripP = rospy.Subscriber("/points_grasp", PointCloud2, self.cb_graspP, queue_size=10)
@@ -39,21 +41,21 @@ class CameraHandler(object):
         msg.data = boolVal
         self.pub_runCam.publish(msg)
 
-        if not boolVal: self.graspP = [] #reset
+        if not boolVal: self.graspP = []  # reset
 
     def cb_graspP(self, msg=PointCloud2()):
         assert isinstance(msg, PointCloud2)
-        
+
         gen = point_cloud2.read_points(msg, field_names=("x", "y", "z"), skip_nans=True)
         self.graspP = []
         for p in gen:
-            if self.listener is not None: #transform points to map-coordinates 
+            if self.listener is not None:  # transform points to map-coordinates
                 p_msg = geom_msg.PointStamped()
                 p_msg.header = msg.header
                 p_msg.point.x, p_msg.point.y, p_msg.point.z = p
-          
+
                 p = self.transformPointMsgToFrame(self.toFrame, p_msg)
-                
+
             self.graspP.append(MyPoint(p))
 
     def transformPointMsgToFrame(self, frame, p_msg=geom_msg.PointStamped()):
@@ -68,7 +70,6 @@ class CameraHandler(object):
         """
         # Transform point to toFrame:
         return match_geometry.transformPointMsgToFrame(self.listener, self.syncTime, frame, p_msg)
-
 
     def getGraspP(self):
         """Starts/Stops detection and returns the 2 graspPoints (transformed to "toFrame")
@@ -98,9 +99,9 @@ class CameraHandler(object):
 
         """
         while not rospy.is_shutdown():
-            graspPoints = self.getGraspP()   #in panda_hand-frame
+            graspPoints = self.getGraspP()  # in panda_hand-frame
             # Z zeigt aus Greifer raus
-            p = MyPoint(((graspPoints[0]+graspPoints[1]).asArray()[:3])/2.0)
+            p = MyPoint(((graspPoints[0] + graspPoints[1]).asArray()[:3]) / 2.0)
             if p.z < minD:
                 rospy.loginfo("Z Value is smaller 0: GraspPoint is behind gripper!")
                 continue
@@ -108,23 +109,22 @@ class CameraHandler(object):
             p_hand_pre = MyPointStamped(copy.copy(p), self.toFrame)
             p_hand_pre.point.z = 0
 
-
             p_map = self.transformPointMsgToFrame("map", p_hand_pre)
             if p_map.z < minH:
                 rospy.loginfo("Z Value is small: GraspPoint is near floor")
                 continue
-            
-             # found valid grasp point
+
+            # found valid grasp point
             return p, MyPoint(p_hand_pre.point), MyPoint(p_map)
 
+
 if __name__ == '__main__':
-    
     rospy.init_node("TEST_cam_otherNode")
     time.sleep(1)
 
     tf_caster = tf2_ros.StaticTransformBroadcaster()
-    trans=(1.0,0.0,0.0)
-    rot=(0.0,0.0,0.0,1.0)
+    trans = (1.0, 0.0, 0.0)
+    rot = (0.0, 0.0, 0.0, 1.0)
     tf_msg = geom_msg.TransformStamped()
     tf_msg.header.stamp = rospy.Time.now()
     tf_msg.header.frame_id = "map"
@@ -137,11 +137,10 @@ if __name__ == '__main__':
     tf_msg.transform.rotation.z = rot[2]
     tf_msg.transform.rotation.w = rot[3]
     tf_caster.sendTransform(tf_msg)
-    
 
     listener = tf.TransformListener()
 
-    cam=CameraHandler(listener, "map")
+    cam = CameraHandler(listener, "map")
     time.sleep(1)
     points = cam.getGraspP()
 

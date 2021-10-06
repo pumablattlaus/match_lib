@@ -104,8 +104,12 @@ class MyPose(Pose):
             rot = self.orientation.asArray()
         return rotateVector(vec, rot)
 
-def rotateVector(vec=(0.0,0.0,1.0), rot=(0.0,0.0,0.0,1.0)):
-    rot_conj = transformations.quaternion_conjugate(rot)
+def rotateVector(vec=(0.0,0.0,1.0), rot=(0.0,0.0,0.0,1.0), transpose=False):
+    if transpose:
+        rot_conj = rot
+        rot = transformations.quaternion_conjugate(rot_conj)
+    else:
+        rot_conj = transformations.quaternion_conjugate(rot)
     trans = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, vec), rot) [:3]
     return MyPoint(trans)
 

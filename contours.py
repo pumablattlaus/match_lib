@@ -48,7 +48,7 @@ def contoursFromCannyEdge(img):
     # _ , contours, hierachy = cv.findContours(mask, cv.RETR_CCOMP,  cv.CHAIN_APPROX_SIMPLE)
     # _ , contours, hierachy = cv.findContours(mask, cv.RETR_CCOMP,  cv.CHAIN_APPROX_NONE)
     out = cv.findContours(mask, cv.RETR_CCOMP,
-                          cv.CHAIN_APPROX_NONE)  # TODO: eig. hier 3 outputs? aktuelle version opencv?
+                          cv.CHAIN_APPROX_NONE)  # eig. hier 3 outputs? aktuelle version opencv?
     if len(out) == 2:
         contours, hierachy = out
     else:

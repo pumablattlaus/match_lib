@@ -276,7 +276,7 @@ class Camera(object):
             # depth_img = (min_thres <= depth_img)*depth_img
             depth_img[depth_img < min_thres] = 0
         try:
-            scale_fac = 254.0 / depth_img.max()  # TODO: 254.0/(depth_img.max()
+            scale_fac = 254.0 / depth_img.max()
         except ZeroDivisionError:
             scale_fac = 0  # should not happen often. If ZeroDev on regular basis: if depth_img.max() .../else 0
         depth_img_thres8 = np.uint8(cv.normalize(depth_img, None, 0, 254, cv.NORM_MINMAX))

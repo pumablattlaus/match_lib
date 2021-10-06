@@ -77,7 +77,7 @@ class MyOrient(Quaternion):
 
 class MyPose(Pose):
     def __init__(self, pos=(0.0, 0.0, 0.0), quatern=(0.0, 0.0, 0.0, 1.0)):
-        if type(pos) == Pose:
+        if type(pos) == Pose or type(pos) == MyPose:
             point = MyPoint(pos.position)
             orient = MyOrient(pos.orientation)
         else:

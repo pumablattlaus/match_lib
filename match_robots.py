@@ -226,8 +226,6 @@ class MirNav2Goal(object):
         ############ -- get the current pose of the robot -- #################
 
     def odom_callback(self, msg=Pose()):
-        # ToDo: test if adding subtracting is working if constructed this way
-        # self.mirPose = MyPose(msg.position, msg.orientation)
         pos = msg.position
         self.mirPose.position.x = float(pos.x)
         self.mirPose.position.y = float(pos.y)

@@ -117,7 +117,7 @@ def rotateVector(vec=(0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0), transpose=False)
     return MyPoint(trans)
 
 
-def rotationDiffRotated(rot_diff=(0.0, 0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0)):
+def rotationDiffRotated(rot_diff=(0.0, 0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0), transpose=False):
     """Express orientation in different frame
 
     Args:
@@ -127,7 +127,11 @@ def rotationDiffRotated(rot_diff=(0.0, 0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0))
     Returns:
         tuple (quaternion): rot_diff rotated by rot
     """
-    rot_conj = transformations.quaternion_conjugate(rot)
+    if transpose:
+        rot_conj = rot
+        rot = transformations.quaternion_conjugate(rot)
+    else:
+        rot_conj = transformations.quaternion_conjugate(rot)
     rot_diff_rotated = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, rot_diff), rot)
     return rot_diff_rotated
 

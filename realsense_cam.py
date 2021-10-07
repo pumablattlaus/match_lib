@@ -16,6 +16,7 @@ import time
 
 from match_geometry import MyPoint
 
+
 class Camera(object):
     """class for handeling realsense depth camera
 
@@ -27,6 +28,7 @@ class Camera(object):
             alignTo (string, optional): Align to: "color" or "depth". Defaults to None.
             other_tf_trees (list[parent, child, trans=(0.0,0.0,0.0), rot=(0.0,0.0,0.0,1.0)]: 
         """
+
     def __init__(self, depth=True, color=True, pathSettingsJson=None, filter=True, alignTo=None, other_tf_trees=None):
         other_tf_msgs = [self._create_tf_msg(*tf) for tf in other_tf_trees] if other_tf_trees is not None else None
         self._cast_static_tfs(other_tf_msgs)
@@ -39,22 +41,21 @@ class Camera(object):
         if pathSettingsJson is not None:
             json_obj = json.load(pathSettingsJson)
             try:
-                self.stream_f=int(json_obj['viewer']['stream-fps'])
+                self.stream_f = int(json_obj['viewer']['stream-fps'])
                 self.stream_w = int(json_obj['viewer']['stream-width'])
                 self.stream_h = int(json_obj['viewer']['stream-height'])
             except KeyError:
                 print("Stream values not set. Using default")
-            
 
         self.pipeline = rs.pipeline()
-        
+
         # configure streams:
         config = rs.config()
         if depth:
             config.enable_stream(rs.stream.depth, self.stream_w, self.stream_h, rs.format.z16, self.stream_f)
         if color:
             config.enable_stream(rs.stream.color, self.stream_w, self.stream_h, rs.format.bgr8, self.stream_f)
-        
+
         # Get intrinsics:
         profile = self.pipeline.start(config)
         self.dev = profile.get_device()
@@ -63,7 +64,8 @@ class Camera(object):
         # Get extrinsics:
         if color and depth:
             self.extrinsics = self.get_extrinsics()
-        else: self.extrinsics = None
+        else:
+            self.extrinsics = None
 
         # Get depth_scale:
         self.depth_scale = self.dev.first_depth_sensor().get_depth_scale()
@@ -79,16 +81,17 @@ class Camera(object):
             if alignTo == "color":
                 self._alignTo = rs.align(rs.stream.color)  # align depth to color stream
             elif alignTo == "depth":
-                self._alignTo = rs.align(rs.stream.depth)    # align color to depth stream
+                self._alignTo = rs.align(rs.stream.depth)  # align color to depth stream
             else:
                 self._alignTo = None
                 rospy.loginfo("No Alignment")
-        else: self._alignTo = None
+        else:
+            self._alignTo = None
 
         # Vars to save frame data:
-        self.color_data ,self.depth_data = None, None
+        self.color_data, self.depth_data = None, None
 
-    def setROIFromPoint(self, pos=(0,0,0.0,0.0), width=10, heigth=10):
+    def setROIFromPoint(self, pos=(0, 0, 0.0, 0.0), width=10, heigth=10):
         """Sets Region of interest from 3D-point and returns center of region in u,v
 
         Args:
@@ -111,24 +114,24 @@ class Camera(object):
         if width > self.stream_w: width = self.stream_w
         if heigth > self.stream_h: heigth = self.stream_h
 
-        maxX = int(px[0]+width/2)
-        minX = int(px[0]-width/2)
-        maxY = int(px[1]+heigth/2)
-        minY = int(px[1]-heigth/2)
+        maxX = int(px[0] + width / 2)
+        minX = int(px[0] - width / 2)
+        maxY = int(px[1] + heigth / 2)
+        minY = int(px[1] - heigth / 2)
 
-        if minX  > self.stream_w or maxX > self.stream_w:
+        if minX > self.stream_w or maxX > self.stream_w:
             minX = self.stream_w - width
             maxX = self.stream_w
 
-        if minX  < 0 or maxX < 0:
+        if minX < 0 or maxX < 0:
             minX = 0
             maxX = width
 
-        if minY  > self.stream_w or maxY > self.stream_w:
+        if minY > self.stream_w or maxY > self.stream_w:
             minY = self.stream_w - heigth
             maxY = self.stream_w
 
-        if minY  < 0 or maxY < 0:
+        if minY < 0 or maxY < 0:
             minY = 0
             maxY = heigth
 
@@ -146,7 +149,7 @@ class Camera(object):
             roi (pyrealsense2.pyrealsense2.region_of_interest): (maxX, maxY, minX, minY)
         """
         s = self.dev.first_roi_sensor()
-        roi = s.get_region_of_interest() # old roi
+        roi = s.get_region_of_interest()  # old roi
         # roi = rs.region_of_interest()
         if maxX is not None: roi.max_x = maxX
         if maxY is not None: roi.max_y = maxY
@@ -157,16 +160,17 @@ class Camera(object):
 
     def _cast_static_tfs(self, other_msgs=None):
         tf_caster = tf2_ros.StaticTransformBroadcaster()
-        msgs = [self._create_tf_msg("camera_link", "camera_depth_frame"), 
-                self._create_tf_msg("camera_depth_frame", "camera_depth_optical_frame", rot=(-0.5,0.5,-0.5,0.5)), 
-                self._create_tf_msg("camera_link", "camera_color_frame", trans=(-0.000382322788937, 0.0148443710059, 0.000229349301662), 
-                    rot=(0.002997583244,-0.00174734566826,0.00472849281505,0.999982774258)), 
-                self._create_tf_msg("camera_color_frame", "camera_color_optical_frame", rot=(-0.5,0.5,-0.5,0.5))]
+        msgs = [self._create_tf_msg("camera_link", "camera_depth_frame"),
+                self._create_tf_msg("camera_depth_frame", "camera_depth_optical_frame", rot=(-0.5, 0.5, -0.5, 0.5)),
+                self._create_tf_msg("camera_link", "camera_color_frame",
+                                    trans=(-0.000382322788937, 0.0148443710059, 0.000229349301662),
+                                    rot=(0.002997583244, -0.00174734566826, 0.00472849281505, 0.999982774258)),
+                self._create_tf_msg("camera_color_frame", "camera_color_optical_frame", rot=(-0.5, 0.5, -0.5, 0.5))]
         if other_msgs is not None:
             msgs.append(*other_msgs)
         tf_caster.sendTransform(msgs)
 
-    def _create_tf_msg(self, parent, child, trans=(0.0,0.0,0.0), rot=(0.0,0.0,0.0,1.0)):
+    def _create_tf_msg(self, parent, child, trans=(0.0, 0.0, 0.0), rot=(0.0, 0.0, 0.0, 1.0)):
         tf_msg = geom_msg.TransformStamped()
         tf_msg.header.stamp = rospy.Time.now()
         tf_msg.header.frame_id = parent
@@ -206,7 +210,7 @@ class Camera(object):
             print("No frame, Camera connected?")
             return False, None, None
 
-        self.color_data ,self.depth_data = color_data, depth_data
+        self.color_data, self.depth_data = color_data, depth_data
         return True, color_data, depth_data
 
     def get_imgs(self):
@@ -247,7 +251,7 @@ class Camera(object):
             return None
         if self.use_filter:
             depth_frame = self.filter.filter(depth_frame)
-            
+
         depth_image = np.asanyarray(depth_frame.get_data())
         return depth_image
 
@@ -272,9 +276,9 @@ class Camera(object):
             # depth_img = (min_thres <= depth_img)*depth_img
             depth_img[depth_img < min_thres] = 0
         try:
-            scale_fac = 254.0/depth_img.max()   # TODO: 254.0/(depth_img.max()
+            scale_fac = 254.0 / depth_img.max()
         except ZeroDivisionError:
-            scale_fac = 0   # should not happen often. If ZeroDev on regular basis: if depth_img.max() .../else 0
+            scale_fac = 0  # should not happen often. If ZeroDev on regular basis: if depth_img.max() .../else 0
         depth_img_thres8 = np.uint8(cv.normalize(depth_img, None, 0, 254, cv.NORM_MINMAX))
 
         return depth_img_thres8, depth_img, scale_fac
@@ -313,7 +317,8 @@ class Camera(object):
             intrinsics: i.e.: [ 640x480  p[318.129 242.52]  f[383.523 383.523]  Brown Conrady [0 0 0 0 0] ]
         """
         try:
-            intrin = self.pipeline.get_active_profile().get_stream(rs.stream.depth).as_video_stream_profile().get_intrinsics()
+            intrin = self.pipeline.get_active_profile().get_stream(
+                rs.stream.depth).as_video_stream_profile().get_intrinsics()
         except RuntimeError:
             rospy.loginfo("No intrinsics for depth stream")
             intrin = None
@@ -326,7 +331,8 @@ class Camera(object):
             intrinsics: i.e.: [ 640x480  p[318.129 242.52]  f[383.523 383.523]  Brown Conrady [0 0 0 0 0] ]
         """
         try:
-            intrin = self.pipeline.get_active_profile().get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
+            intrin = self.pipeline.get_active_profile().get_stream(
+                rs.stream.color).as_video_stream_profile().get_intrinsics()
         except RuntimeError:
             rospy.loginfo("No intrinsics for color stream")
             intrin = None
@@ -348,8 +354,10 @@ class Camera(object):
             extrinsics (dict): {depth_to_color, color_to_depth}
         """
         profile = self.pipeline.get_active_profile()
-        depth_to_color_extrin =  profile.get_stream(rs.stream.depth).as_video_stream_profile().get_extrinsics_to( profile.get_stream(rs.stream.color))
-        color_to_depth_extrin =  profile.get_stream(rs.stream.color).as_video_stream_profile().get_extrinsics_to( profile.get_stream(rs.stream.depth))
+        depth_to_color_extrin = profile.get_stream(rs.stream.depth).as_video_stream_profile().get_extrinsics_to(
+            profile.get_stream(rs.stream.color))
+        color_to_depth_extrin = profile.get_stream(rs.stream.color).as_video_stream_profile().get_extrinsics_to(
+            profile.get_stream(rs.stream.depth))
         extrinsics = {"depth_to_color": depth_to_color_extrin, "color_to_depth": color_to_depth_extrin}
         return extrinsics
 
@@ -357,6 +365,7 @@ class Camera(object):
 class Filter(object):
     """Filter obj for applying different filters to depth frame (spatial, temporal, hole_filling)
     """
+
     def __init__(self):
         self.depth_to_disparity = rs.disparity_transform(True)
         self.disparity_to_depth = rs.disparity_transform(False)
@@ -385,6 +394,7 @@ class Filter(object):
         frame = self.hole_filling.process(frame)
         return frame
 
+
 def linesTo3dPoints(lines, depth, intrinsics):
     """calculates 3d points represented by end and beginning of lines
 
@@ -402,18 +412,19 @@ def linesTo3dPoints(lines, depth, intrinsics):
 
     for line in lines:
         x1, y1, x2, y2 = line[0]
-        x1, y1, x2, y2 = int(x1)-1, int(y1)-1, int(x2)-1, int(y2)-1
-        z1 = findValueBiggerThen(depth, [y1,x1])
-        z2 = findValueBiggerThen(depth, [y2,x2])
+        x1, y1, x2, y2 = int(x1) - 1, int(y1) - 1, int(x2) - 1, int(y2) - 1
+        z1 = findValueBiggerThen(depth, [y1, x1])
+        z2 = findValueBiggerThen(depth, [y2, x2])
         if z1:
             p1 = rs.rs2_deproject_pixel_to_point(intrinsics, (x1, y1), z1)
             points.append(p1)
         if z2:
-            p2 = rs.rs2_deproject_pixel_to_point(intrinsics, (x2, y2), z2)  #*scale_fac
+            p2 = rs.rs2_deproject_pixel_to_point(intrinsics, (x2, y2), z2)  # *scale_fac
             points.append(p2)
     point_arr = np.array(points)
-    point_arr/=1000.0   # mm to m 
+    point_arr /= 1000.0  # mm to m
     return point_arr
+
 
 def points2DTo3D(depth, points_in, intrinsics):
     """calculates 3D points
@@ -431,13 +442,14 @@ def points2DTo3D(depth, points_in, intrinsics):
 
     for point in points_in:
         x, y = point[0]
-        _, z = findValueBiggerThen(depth, [y,x])
+        _, z = findValueBiggerThen(depth, [y, x])
         if z:
             p = rs.rs2_deproject_pixel_to_point(intrinsics, (x, y), z)
             points.append(p)
     point_arr = np.array(points)
-    point_arr/=1000.0   # mm to m 
+    point_arr /= 1000.0  # mm to m
     return point_arr
+
 
 def calc3DPoints(depth, intrinsics):
     """Calculates Points from depth img
@@ -453,12 +465,12 @@ def calc3DPoints(depth, intrinsics):
     shape = depth.shape
     for i in range(shape[0]):
         for j in range(shape[1]):
-            z = depth[i,j]
+            z = depth[i, j]
             if z:
                 p = rs.rs2_deproject_pixel_to_point(intrinsics, (j, i), z)
                 points.append(p)
     point_arr = np.array(points)
-    point_arr/=1000.0   # mm to m 
+    point_arr /= 1000.0  # mm to m
     return point_arr
 
     # pc = rs.pointcloud()
@@ -467,8 +479,7 @@ def calc3DPoints(depth, intrinsics):
     # cloud_points = pcl2.create_cloud_xyz32(header,points_all)
 
 
-
-def findValueBiggerThen(img, xy, minVal=0, max_delta = 20):
+def findValueBiggerThen(img, xy, minVal=0, max_delta=20):
     """returns value from img if bigger then minVal
 
     Args:
@@ -488,7 +499,6 @@ def findValueBiggerThen(img, xy, minVal=0, max_delta = 20):
             val = 0
         return val
 
-
     idx_delta = np.array([[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]])
     xy = np.array(xy)
     val = 0
@@ -496,19 +506,22 @@ def findValueBiggerThen(img, xy, minVal=0, max_delta = 20):
     i = 1
     while i <= max_delta:
         for delta in idx_delta:
-            px =xy + delta*i
-            
+            px = xy + delta * i
+
             val = getVal(px)
             if val != 0:
                 return px, val
-        i+=1
-    return [0,0], 0
+        i += 1
+    return [0, 0], 0
+
 
 if __name__ == '__main__':
-    tf_extra = [["map", "camera_link", (0.0,0.0,0.0), (0.0,0.0,0.0,1.0)]]
+    tf_extra = [["map", "camera_link", (0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0)]]
 
     rospy.init_node("Realsense_Camera_Module")
-    cam = Camera(pathSettingsJson=open(os.path.abspath(os.path.dirname(__file__))+"/camera-settings_highAccuracy.json"), other_tf_trees=tf_extra)
+    cam = Camera(
+        pathSettingsJson=open(os.path.abspath(os.path.dirname(__file__)) + "/camera-settings_highAccuracy.json"),
+        other_tf_trees=tf_extra)
     print(cam.get_intrinsics_depth())
 
     # pos = MyPoint((0.11713785, -0.01958524, 0.253))
@@ -523,8 +536,3 @@ if __name__ == '__main__':
     rate = rospy.Rate(10)
     while not rospy.is_shutdown():
         rate.sleep()
-
-
-        
-
-

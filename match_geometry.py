@@ -12,6 +12,7 @@ import copy
 import time
 import rospy
 
+
 class MyPoint(Point):
     def __init__(self, pos=(0.0, 0.0, 0.0)):
         if type(pos) == Point or type(pos) == MyPoint:
@@ -41,6 +42,7 @@ class MyPoint(Point):
 
     def asArray(self):
         return np.array([self.x, self.y, self.z, 0])
+
 
 class MyPointStamped(PointStamped):
     def __init__(self, pos=(0.0, 0.0, 0.0), frame_id=""):
@@ -75,7 +77,7 @@ class MyOrient(Quaternion):
 
 class MyPose(Pose):
     def __init__(self, pos=(0.0, 0.0, 0.0), quatern=(0.0, 0.0, 0.0, 1.0)):
-        if type(pos) == Pose:
+        if type(pos) == Pose or type(pos) == MyPose:
             point = MyPoint(pos.position)
             orient = MyOrient(pos.orientation)
         else:
@@ -96,7 +98,7 @@ class MyPose(Pose):
         p_out.position = self.position - p2.position
         p_out.orientation = self.orientation - p2.orientation
         return p_out
-    
+
     def rotateVector(self, vec=None, rot=None):
         if vec == None:
             vec = self.position.asArray()
@@ -104,16 +106,18 @@ class MyPose(Pose):
             rot = self.orientation.asArray()
         return rotateVector(vec, rot)
 
-def rotateVector(vec=(0.0,0.0,1.0), rot=(0.0,0.0,0.0,1.0), transpose=False):
+
+def rotateVector(vec=(0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0), transpose=False):
     if transpose:
         rot_conj = rot
         rot = transformations.quaternion_conjugate(rot_conj)
     else:
         rot_conj = transformations.quaternion_conjugate(rot)
-    trans = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, vec), rot) [:3]
+    trans = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, vec), rot)[:3]
     return MyPoint(trans)
 
-def rotationDiffRotated(rot_diff=(0.0,0.0,0.0, 1.0), rot=(0.0,0.0,0.0,1.0)):
+
+def rotationDiffRotated(rot_diff=(0.0, 0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0)):
     """Express orientation in different frame
 
     Args:
@@ -127,7 +131,8 @@ def rotationDiffRotated(rot_diff=(0.0,0.0,0.0, 1.0), rot=(0.0,0.0,0.0,1.0)):
     rot_diff_rotated = transformations.quaternion_multiply(transformations.quaternion_multiply(rot_conj, rot_diff), rot)
     return rot_diff_rotated
 
-def rotateToXAxis(points, axis=(0,1), transpose = False):
+
+def rotateToXAxis(points, axis=(0, 1), transpose=False):
     """Rotate list of points to from X-Axis to new axis 
 
     Args:
@@ -140,12 +145,13 @@ def rotateToXAxis(points, axis=(0,1), transpose = False):
     """
     if points[0] is None: return None
 
-    axis = axis/np.linalg.norm(axis)
-    R = np.array([[axis[0],axis[1]],
-                [-axis[1],axis[0]]])
+    axis = axis / np.linalg.norm(axis)
+    R = np.array([[axis[0], axis[1]],
+                  [-axis[1], axis[0]]])
     if transpose: R = R.T
-    contour_new = np.array(np.matmul(points,R))
+    contour_new = np.array(np.matmul(points, R))
     return contour_new
+
 
 def getOrientDiffNoZ(goalOrient=MyOrient(), preGripOrient=MyOrient(), withoutAxisIdx=2):
     """Calculates OrientDiff and sets rotation around axis to 0
@@ -159,8 +165,9 @@ def getOrientDiffNoZ(goalOrient=MyOrient(), preGripOrient=MyOrient(), withoutAxi
         MyOrient(withoutAxis), MyOrient(onlyAxis): For default: Orientation without Z and only Z
     """
 
-    orient_delta = MyOrient((goalOrient-preGripOrient).asArray())
+    orient_delta = MyOrient((goalOrient - preGripOrient).asArray())
     return getOrientationNoZ(orient_delta, withoutAxisIdx)
+
 
 def getOrientationNoZ(orient_delta=MyPose, withoutAxisIdx=2):
     """Sets rotation around axis to 0
@@ -178,12 +185,12 @@ def getOrientationNoZ(orient_delta=MyPose, withoutAxisIdx=2):
     # set Z to 0
     rot_noZ_euler = copy.copy(rot_delta_euler)
     rot_noZ_euler[withoutAxisIdx] = 0
-    rot_noZ = rot.from_euler("xyz",rot_noZ_euler)
+    rot_noZ = rot.from_euler("xyz", rot_noZ_euler)
 
-    rot_onlyZ_euler = [0,0,0]
+    rot_onlyZ_euler = [0, 0, 0]
     rot_onlyZ_euler[withoutAxisIdx] = rot_delta_euler[withoutAxisIdx]
-    rot_onlyZ = rot.from_euler("xyz",rot_onlyZ_euler)
-    
+    rot_onlyZ = rot.from_euler("xyz", rot_onlyZ_euler)
+
     return MyOrient(rot_noZ.as_quat()), MyOrient(rot_onlyZ.as_quat())
 
 
@@ -227,7 +234,8 @@ def getTransformation(listener, fromFrame, toFrame, syncTimePublisher):
         listener.waitForTransform(toFrame, fromFrame, now, rospy.Duration(4.0))
         (pos, rot) = listener.lookupTransform(toFrame, fromFrame, now)
 
-    return pos,rot
+    return pos, rot
+
 
 def _transformMsgToFrame(listener, syncTimePublisher, frame, p_msg, func_transf=None):
     """Transform Stamped Msg to frame
@@ -243,20 +251,24 @@ def _transformMsgToFrame(listener, syncTimePublisher, frame, p_msg, func_transf=
         p_msg_new: transformed msg
     """
     if func_transf is None:
-        if type(p_msg) == PointStamped: func_transf = listener.transformPoint
-        elif type(p_msg) == PoseStamped: func_transf = listener.transformPose
-        else: return None
+        if type(p_msg) == PointStamped:
+            func_transf = listener.transformPoint
+        elif type(p_msg) == PoseStamped:
+            func_transf = listener.transformPose
+        else:
+            return None
     try:
         now = rospy.Time.now()
         listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
         p_msg_new = func_transf(frame, p_msg)
-    except: # ExtrapolationException:
+    except:  # ExtrapolationException:
         syncTimePublisher.publish(std_msgs.msg.Bool(True))
         time.sleep(0.5)
         now = rospy.Time.now()
         listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
         p_msg_new = func_transf(frame, p_msg)
     return p_msg_new
+
 
 def transformPointMsgToFrame(listener, syncTimePublisher, frame, p_msg=PointStamped()):
     """transforms point from PointStamped to frame.
@@ -275,7 +287,7 @@ def transformPointMsgToFrame(listener, syncTimePublisher, frame, p_msg=PointStam
         now = rospy.Time.now()
         listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
         p_msg_new = listener.transformPoint(frame, p_msg)
-    except: # ExtrapolationException:
+    except:  # ExtrapolationException:
         syncTimePublisher.publish(std_msgs.msg.Bool(True))
         time.sleep(0.5)
         now = rospy.Time.now()
@@ -284,6 +296,7 @@ def transformPointMsgToFrame(listener, syncTimePublisher, frame, p_msg=PointStam
 
     p = p_msg_new.point
     return p
+
 
 def transformPoseMsgToFrame(listener, syncTimePublisher, frame, p_msg=PoseStamped()):
     """transforms point from PointStamped to frame.
@@ -300,6 +313,7 @@ def transformPoseMsgToFrame(listener, syncTimePublisher, frame, p_msg=PoseStampe
     p_msg_new = _transformMsgToFrame(listener, syncTimePublisher, frame, p_msg, listener.transformPose)
     p = MyPose(p_msg_new.pose)
     return p
+
 
 if __name__ == '__main__':
     rospy.init_node("Test_geom")
@@ -322,36 +336,35 @@ if __name__ == '__main__':
 
     # MyPose from Pose:
     pose = Pose()
-    pose.position.x, pose.position.y, pose.position.z = 1,2,3
-    pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w = 0,1,0,0
+    pose.position.x, pose.position.y, pose.position.z = 1, 2, 3
+    pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w = 0, 1, 0, 0
 
     pose_my = MyPose(pose)
     print(pose_my)
-    
-    
+
     p1 = MyPose((0.656036424314, -0.0597577841713, -0.103558385398), (-0.909901224555, 0.41268467068,
-                                                                        -0.023065127793, 0.0352011934197))
+                                                                      -0.023065127793, 0.0352011934197))
     a1 = [-0.198922703533319, 1.3937412735955756, 0.11749296106956011, -1.312658217933717, -0.1588243463469876,
-            2.762937863667806, 0.815807519980951]
-    
+          2.762937863667806, 0.815807519980951]
+
     # panda_goal = PandaGoals(p1, a1)
     # print(panda_goal)
 
     p_stamped = MyPointStamped((1, 2, 3))
     p_stamped2 = MyPointStamped((1, 2, 3))
 
-    p_stamped_res = p_stamped+p_stamped2
+    p_stamped_res = p_stamped + p_stamped2
 
     print(p_stamped_res)
 
     # Orientation:
     o_diff = MyOrient((0, 0, 0.7071068, 0.7071068))
-    print(rotateVector((1,0,0,1), o_diff.asArray()))
+    print(rotateVector((1, 0, 0, 1), o_diff.asArray()))
 
-    o = MyOrient()# 0°
+    o = MyOrient()  # 0°
     o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())
-    print(o_diff_rot) # 0°
+    print(o_diff_rot)  # 0°
 
-    o = MyOrient((0.7071068, 0, 0.0, 0.7071068))    # 45° um x
+    o = MyOrient((0.7071068, 0, 0.0, 0.7071068))  # 45° um x
     o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())
     print(o_diff_rot)

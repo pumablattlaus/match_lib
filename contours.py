@@ -18,17 +18,18 @@ def canny(depth_img, sureNoEdge, sureEdge):
     Returns:
         np.uint8: img with canny edges
     """
-    edge_canny = cv.Canny(depth_img, sureNoEdge, sureEdge)    #Canny recommended a upper:lower ratio between 2:1 and 3:1
+    edge_canny = cv.Canny(depth_img, sureNoEdge, sureEdge)  # Canny recommended a upper:lower ratio between 2:1 and 3:1
     edge_canny_abs = np.absolute(edge_canny)
     edge_canny_8 = np.uint8(edge_canny_abs)
     return edge_canny_8
+
 
 def get_drawContours(img, drawtoimg=None, canny=False):
     if drawtoimg is None:
         drawtoimg = img
     mask = cv.inRange(img, 5, 255)
-    _ , contours, hierachy = cv.findContours(mask, cv.RETR_CCOMP,  cv.CHAIN_APPROX_SIMPLE)
-    depthtorgb = cv.cvtColor(drawtoimg,cv.COLOR_GRAY2RGB)
+    _, contours, hierachy = cv.findContours(mask, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+    depthtorgb = cv.cvtColor(drawtoimg, cv.COLOR_GRAY2RGB)
 
     for i in range(len(contours)):
         # if edge detection and there is a parent: next contur
@@ -41,16 +42,18 @@ def get_drawContours(img, drawtoimg=None, canny=False):
         cv.waitKey(0)
     return depthtorgb
 
+
 def contoursFromCannyEdge(img):
     mask = cv.inRange(img, 5, 255)
     # _ , contours, hierachy = cv.findContours(mask, cv.RETR_CCOMP,  cv.CHAIN_APPROX_SIMPLE)
     # _ , contours, hierachy = cv.findContours(mask, cv.RETR_CCOMP,  cv.CHAIN_APPROX_NONE)
-    out = cv.findContours(mask, cv.RETR_CCOMP,  cv.CHAIN_APPROX_NONE) # TODO: eig. hier 3 outputs? aktuelle version opencv?
+    out = cv.findContours(mask, cv.RETR_CCOMP,
+                          cv.CHAIN_APPROX_NONE)  # eig. hier 3 outputs? aktuelle version opencv?
     if len(out) == 2:
         contours, hierachy = out
     else:
         _, contours, hierachy = out
-        
+
     contour_out = []
     closed = []
     for i in range(len(contours)):
@@ -60,12 +63,14 @@ def contoursFromCannyEdge(img):
             # for closed contours there is always a child when using edge detect
             if hierachy[0][i][2] == -1:
                 closed.append(False)
-            else: closed.append(True)
-                
+            else:
+                closed.append(True)
+
     return contour_out, closed
 
+
 def drawContours(contours, drawtoimg):
-    depthtorgb = cv.cvtColor(drawtoimg,cv.COLOR_GRAY2RGB)
+    depthtorgb = cv.cvtColor(drawtoimg, cv.COLOR_GRAY2RGB)
 
     for i in range(len(contours)):
         color = np.random.choice(range(256), size=3)
@@ -74,18 +79,19 @@ def drawContours(contours, drawtoimg):
         # cv.waitKey(0)
     return depthtorgb
 
+
 def calcAreaContour(contour):
-    y_vals = contour[:,0,1]
-    x_vals = contour[:,0,0]
+    y_vals = contour[:, 0, 1]
+    x_vals = contour[:, 0, 0]
     x_min = np.min(x_vals)
     x_max = np.max(x_vals)
     y_min = np.min(y_vals)
     y_max = np.max(y_vals)
 
-    return (x_max-x_min)*(y_max-y_min)
+    return (x_max - x_min) * (y_max - y_min)
+
 
 def getBiggestContour(contours):
-
     return np.argmax([calcAreaContour(contour) for contour in contours])
 
 
@@ -100,8 +106,9 @@ def contourChildrenIdxAll(contours):
     """
     childs = [[] for c in contours]
     for i in range(len(contours)):
-        childs[i]=contourChildrenIdx(contours, i)
+        childs[i] = contourChildrenIdx(contours, i)
     return childs
+
 
 def contourChildrenIdx(contours, idx):
     """Get inner Contours for contour at index 
@@ -114,13 +121,14 @@ def contourChildrenIdx(contours, idx):
         list[idxs_ChildsContourIdx]: list with indexes of inner contours
     """
     childs = []
-    outer_path = path.Path(contours[idx][:,0])
+    outer_path = path.Path(contours[idx][:, 0])
     for i in range(len(contours)):
-        inner_path = path.Path(contours[i][:,0])
+        inner_path = path.Path(contours[i][:, 0])
         if outer_path.contains_path(inner_path):
             childs.append(i)
 
     return childs
+
 
 def getAvgValueInContour(img, contour, child_contours=[]):
     """Calc Average filled by Contour minus child contours 
@@ -145,6 +153,7 @@ def getAvgValueInContour(img, contour, child_contours=[]):
 
     return avg
 
+
 def getAvgValuesContours(contours_used, depth_img, minVal=3.0):
     """gets Average values for all contours (see getAvgValueInContour)
 
@@ -163,10 +172,11 @@ def getAvgValuesContours(contours_used, depth_img, minVal=3.0):
     avg_vals_contours = np.zeros(len(contours_used))
     for i, c in enumerate(contours_used):
         val = getAvgValueInContour(depth_img, c, contours_used[childsIdx[i]])
-        if val <= minVal: val = np.Inf   # depth vals never smaller 10. so if lots of zero: depth at inf
+        if val <= minVal: val = np.Inf  # depth vals never smaller 10. so if lots of zero: depth at inf
         avg_vals_contours[i] = val
 
     return avg_vals_contours, childsIdx
+
 
 def getContoursofBiggestObject(contours_closed, minArea=200.0):
     """Returns all contours inside biggest contour (boundary)
@@ -178,11 +188,11 @@ def getContoursofBiggestObject(contours_closed, minArea=200.0):
     Returns:
         np.array[contours]: all contours inside boundary with the boundary at index 0
     """
-    idx_biggest = getBiggestContour(contours_closed)    #boundary of objects
+    idx_biggest = getBiggestContour(contours_closed)  # boundary of objects
 
     # Get contours inside object:
     contours_used_idx = contourChildrenIdx(contours_closed, idx_biggest)
-    contours_used_idx = np.insert(contours_used_idx,0,idx_biggest).astype("int")
+    contours_used_idx = np.insert(contours_used_idx, 0, idx_biggest).astype("int")
     # contours_used = contours_closed[contours_used_idx]
 
     contours_used = []
@@ -193,6 +203,7 @@ def getContoursofBiggestObject(contours_closed, minArea=200.0):
     contours_used = np.array(contours_used)
 
     return contours_used
+
 
 if __name__ == "__main__":
     img = cv.imread(os.path.dirname(__file__) + "/img/Depth.png", cv.IMREAD_GRAYSCALE)

@@ -142,7 +142,7 @@ class Camera(object):
         else:
             return False, px
 
-    def setROIFromPoint(self, pos=(0.0, 0.0, 0.0), width=10, heigth=10):
+    def setROIFromPoint(self, pos=(0.0, 0.0, 0.0), width=0.4, heigth=0.4):
         """Sets Region of interest from 3D-point and returns center of region in u,v
 
         Args:

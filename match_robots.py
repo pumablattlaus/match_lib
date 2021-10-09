@@ -54,6 +54,8 @@ class PandaMove(object):
     def __init__(self, group_name="panda_arm", ns='', robot_description="robot_description", listener=None):
         moveit_commander.roscpp_initialize([])
         self.ns = ns
+        self.finger_length = 0.08
+        self.maxWidthGrip = 0.1
         self.syncTime = rospy.Publisher("/syncTime", std_msg.Bool, queue_size=1)
         self.robot = moveit_commander.RobotCommander(ns=ns, robot_description=robot_description)
         # interface to a planning group (group of joints). used to plan and execute motions

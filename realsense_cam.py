@@ -91,7 +91,7 @@ class Camera(object):
         # Vars to save frame data:
         self.color_data, self.depth_data = None, None
 
-    def setROIFromPoint(self, pos=(0, 0, 0.0, 0.0), width=10, heigth=10):
+    def setROIFromPointAndSize(self, pos=(0, 0, 0.0, 0.0), width=10, heigth=10):
         """Sets Region of interest from 3D-point and returns center of region in u,v
 
         Args:
@@ -141,6 +141,63 @@ class Camera(object):
             return True, px
         else:
             return False, px
+
+    def setROIFromPoint(self, pos=(0, 0, 0.0, 0.0), width=10, heigth=10):
+        """Sets Region of interest from 3D-point and returns center of region in u,v
+
+        Args:
+            pos (tuple): Point to focus on. Defaults to (0.0,0.0,0.0).
+            width (int, optional): width of ROI in mm. Defaults to 10.
+            heigth (int, optional): heigth of ROI in mm. Defaults to 10.
+
+        Returns:
+            boolean: True if point is in view of camera
+            np.array[int[2]]: center of ROI (point in coordinates of camera)
+            np.array[int[2], int[2]]: (px_min, px_max): ROI values
+        """
+
+        if pos[2] == 0:
+            rospy.loginfo("Z is 0")
+            return False, None
+        pos = np.array(pos)
+        xy_diff = (int(width/2), int(heigth/2), 0)
+        pos_max = rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos + xy_diff)
+        pos_min = rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos - xy_diff)
+        # Get pixel
+        px_max = np.array(rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos_max))
+        px_min = np.array(rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos_min))
+
+        if width > self.stream_w: width = self.stream_w
+        if heigth > self.stream_h: heigth = self.stream_h
+
+        maxX = int(px_max[0])
+        minX = int(px_min[0])
+        maxY = int(px_max[1])
+        minY = int(px_min[1])
+
+        if minX > self.stream_w or maxX > self.stream_w:
+            minX = self.stream_w - width
+            maxX = self.stream_w
+
+        if minX < 0 or maxX < 0:
+            minX = 0
+            maxX = width
+
+        if minY > self.stream_w or maxY > self.stream_w:
+            minY = self.stream_w - heigth
+            maxY = self.stream_w
+
+        if minY < 0 or maxY < 0:
+            minY = 0
+            maxY = heigth
+
+        self.set_roi(maxX, maxY, minX, minY)
+
+        px_center = ((px_max+px_min)/2).astype('int')
+        if 0 < px_center[0] < self.stream_w and 0 < px_center[1] < self.stream_h:
+            return True, px_center
+        else:
+            return False, px_center, (px_min, px_max)
 
     def set_roi(self, maxX=None, maxY=None, minX=None, minY=None):
         """Sets region of interest for infrared cams

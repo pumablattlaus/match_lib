@@ -22,6 +22,7 @@ class CameraHandler(object):
 
     def __init__(self, listener=None, toFrame="map"):
         self.pub_runCam = rospy.Publisher("/cam/run", std_msgs.msg.Bool, queue_size=1)
+        self.pub_gripP = rospy.Publisher("/cam/gripPosEstimate", PointCloud2, queue_size=10)
         self.subGripP = rospy.Subscriber("/points_grasp", PointCloud2, self.cb_graspP, queue_size=10)
         self.graspP = []
 
@@ -30,6 +31,20 @@ class CameraHandler(object):
 
         # sync time between miranda and panda
         self.syncTime = rospy.Publisher("/syncTime", std_msgs.msg.Bool, queue_size=1)
+    
+        self.headerPubPoseEstimate = std_msgs.msg.Header()
+        self.headerPubPoseEstimate.frame_id = 'camera_depth_optical_frame'
+
+    def sendGripPoseEstimate(self, p):
+        """Sends grip pose estimate for camera. p in frame 'camera_depth_optical_frame'
+
+        Args:
+            p (tuple(3)): (x,y,z)
+        """
+        self.headerPubPoseEstimate.stamp = rospy.Time.now()
+        self.headerPubPoseEstimate.seq += 1
+        msg = point_cloud2.create_cloud_xyz32(self.headerPubPoseEstimate, [p])
+        self.pub_gripP.publish(msg)
 
     def run(self, boolVal=True):
         """Starts/Stops gripPoints detection of camera script

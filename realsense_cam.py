@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=latin-1
 
+import copy
 import pyrealsense2 as rs
 import rospy
 import numpy as np
@@ -142,11 +143,11 @@ class Camera(object):
         else:
             return False, px
 
-    def getROIFromPoint(self, pos=(0.0, 0.0, 0.0), width=0.4, heigth=0.4):
+    def getROIFromPoint(self, pos=(0.0, 0.0, 0.0), width=40, heigth=40):
         """Sets Region of interest from 3D-point and returns center of region in u,v
 
         Args:
-            pos (tuple): Point to focus on. Defaults to (0.0,0.0,0.0).
+            pos (tuple): Point to focus on. Defaults to (0.0,0.0,0.0). Gets multiplied by cam.depth_scale
             width (int, optional): width of ROI in mm. Defaults to 10.
             heigth (int, optional): heigth of ROI in mm. Defaults to 10.
 
@@ -158,14 +159,15 @@ class Camera(object):
 
         if pos[2] == 0:
             rospy.loginfo("Z is 0")
-            return False, None
-        pos = np.array(pos)
+            return False, None, (None, None)
+        pos = np.array(copy.copy(pos))
+        pos /= self.depth_scale
         xy_diff = (int(width/2), int(heigth/2), 0)
-        pos_max = rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos + xy_diff)
-        pos_min = rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos - xy_diff)
+        px_max = np.array(rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos + xy_diff))
+        px_min = np.array(rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos - xy_diff))
         # Get pixel
-        px_max = np.array(rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos_max))
-        px_min = np.array(rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos_min))
+        # px_max = np.array(rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos_max))
+        # px_min = np.array(rs.rs2_project_point_to_pixel(self.intrinsics["depth"], pos_min))
 
         if width > self.stream_w: width = self.stream_w
         if heigth > self.stream_h: heigth = self.stream_h
@@ -195,7 +197,7 @@ class Camera(object):
 
         px_center = ((px_max+px_min)/2).astype('int')
         if 0 < px_center[0] < self.stream_w and 0 < px_center[1] < self.stream_h:
-            return True, px_center
+            return True, px_center, (px_min, px_max)
         else:
             return False, px_center, (px_min, px_max)
 

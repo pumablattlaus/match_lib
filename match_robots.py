@@ -144,12 +144,13 @@ class PandaMove(object):
         else:
             self.movePose(poseRel)
 
-    def movePoseTotalViaHand(self, pose=MyPose(), toFrame="map"):
+    def movePoseTotalViaHand(self, pose=MyPose(), toFrame="map", v=0.5):
         """using transformation from hand to toFrame(map) to move remaining distance
 
         Args:
             pose (MyPose()): Pose to move to in toFrame frame.
             toFrame (str, optional): Reference Frame. Defaults to "map".
+            v (float, optional): Speed scale
             
         Returns: True if movement successful, False if not or no plan found
         """
@@ -158,7 +159,7 @@ class PandaMove(object):
         poseRel = MyPose(tuple(pos), tuple(rot))
         poseRel = pose - poseRel  # pose diff in panda_hand frame
 
-        return self.moveLin(poseRel, vel=0.5, inFrame=self.ns + "/panda_hand")
+        return self.moveLin(poseRel, vel=v, inFrame=self.ns + "/panda_hand")
             
     def moveLin(self, pose=MyPose(), vel=1, inFrame="/miranda/panda/panda_hand"):
         """ moveLinear in inFrame (panda_hand)"""

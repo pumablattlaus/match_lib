@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=latin-1
 import os
+import copy
 import numpy as np
 import math
 import cv2 as cv
@@ -147,9 +148,11 @@ def getAvgValueInContour(img, contour, child_contours=[]):
         cimg = cv.drawContours(cimg, child_contours, i, color=0, thickness=-1)
 
     pts = np.where(cimg == 255)
-    cont_vals = img[pts]
-    avg = np.sum(cont_vals)
-    avg /= len(cont_vals)
+    cont_vals = np.array(copy.copy(img[pts])).astype("float")
+    cont_vals[cont_vals<=5] = np.NaN    # values never smaller 10
+    # avg = np.nansum(cont_vals)
+    # avg /= len(cont_vals)
+    avg = np.nanmedian(cont_vals)
 
     return avg
 

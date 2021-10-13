@@ -95,7 +95,7 @@ class CameraHandler(object):
         """
         while len(self.graspP) != 2 and not rospy.is_shutdown():
             self.run()
-            time.sleep(0.5)
+            time.sleep(1)
         graspP = copy.copy(self.graspP)
         self.run(False)
         return graspP

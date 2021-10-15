@@ -162,7 +162,16 @@ class PandaMove(object):
         return self.moveLin(poseRel, vel=v, inFrame=toFrame)
             
     def moveLin(self, pose=MyPose(), vel=1, inFrame="/miranda/panda/panda_hand"):
-        """ moveLinear in inFrame (panda_hand)"""
+        """moveLinear in inFrame (panda_hand)
+
+        Args:
+            pose (MyPose, optional): PoseDifference to move. Defaults to MyPose().
+            vel (int, optional): Velocity with which to move. Defaults to 1.
+            inFrame (str, optional): Frame of PoseDifference. Defaults to "/miranda/panda/panda_hand".
+
+        Returns:
+            [type]: [description]
+        """
 
         # Transform Pose difference to panda_link0 (only rotate vector)
         _, rot_0_hand = getTransformation(self.listener, self.ns + "/panda_link0", inFrame,

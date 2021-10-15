@@ -157,9 +157,9 @@ class PandaMove(object):
         pos,rot = getTransformation(self.listener, self.ns+"/panda_hand", toFrame, self.syncTime)
 
         poseRel = MyPose(tuple(pos), tuple(rot))
-        poseRel = pose - poseRel  # pose diff in panda_hand frame
+        poseRel = pose - poseRel  # pose diff in toFrame frame
 
-        return self.moveLin(poseRel, vel=v, inFrame=self.ns + "/panda_hand")
+        return self.moveLin(poseRel, vel=v, inFrame=toFrame)
             
     def moveLin(self, pose=MyPose(), vel=1, inFrame="/miranda/panda/panda_hand"):
         """ moveLinear in inFrame (panda_hand)"""

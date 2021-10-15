@@ -131,6 +131,50 @@ def contourChildrenIdx(contours, idx):
     return childs
 
 
+def getValsInContour(img, contour, child_contours=[]):
+    """Returns Values inside contour minus child contours
+
+    Args:
+        img: img where to get values from
+        contour (list): list[points]
+        child_contours (list, optional): list[contours]. Defaults to [].
+
+    Returns:
+        np.array: values inside contour
+    """
+    # create mask inside contour
+    cimg = np.zeros_like(img)
+    cimg = cv.drawContours(cimg, [contour], 0, color=255, thickness=-1)
+    
+    # mask without child-contours
+    for i in range(len(child_contours)):
+        cimg = cv.drawContours(cimg, child_contours, i, color=0, thickness=-1)
+
+    # get vals of img inside mask
+    pts = np.where(cimg == 255)
+    cont_vals = np.array(copy.copy(img[pts])).astype("float")
+    cont_vals[cont_vals<=5] = np.NaN    # values never smaller 10
+    
+    # TODO: remove outsiders?
+    
+    return cont_vals
+
+def getMinValInContour(img, contour, child_contours=[]):
+    """Calc Minimum of img filled by Contour minus child contours.
+        For grasp-dist: do not use child_contours to prevent collisions 
+
+    Args:
+        img: img where to get values from
+        contour (list): list[points]
+        child_contours (list, optional): list[contours]. Defaults to [].
+
+    Returns:
+        float: min value
+    """
+    # for grasp-dist: do not use child_contours to prevent collisions 
+    cont_vals = getValsInContour(img, contour, child_contours)
+    return np.nanmin(cont_vals)
+
 def getAvgValueInContour(img, contour, child_contours=[]):
     """Calc Average filled by Contour minus child contours 
 
@@ -142,14 +186,7 @@ def getAvgValueInContour(img, contour, child_contours=[]):
     Returns:
         float: average value
     """
-    cimg = np.zeros_like(img)
-    cimg = cv.drawContours(cimg, [contour], 0, color=255, thickness=-1)
-    for i in range(len(child_contours)):
-        cimg = cv.drawContours(cimg, child_contours, i, color=0, thickness=-1)
-
-    pts = np.where(cimg == 255)
-    cont_vals = np.array(copy.copy(img[pts])).astype("float")
-    cont_vals[cont_vals<=5] = np.NaN    # values never smaller 10
+    cont_vals = getValsInContour(img, contour, child_contours)
     # avg = np.nansum(cont_vals)
     # avg /= len(cont_vals)
     avg = np.nanmedian(cont_vals)

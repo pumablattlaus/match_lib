@@ -396,5 +396,5 @@ if __name__ == '__main__':
     o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())
     print(o_diff_rot)
 
-    diff_list = getOrientationDiffList(o, [p1.orientation, pose1, pose2, pose3])
+    diff_list = getOrientationDiffList(o, [p1.orientation, pose1.orientation, pose2.orientation, pose3.orientation])
     print(diff_list)

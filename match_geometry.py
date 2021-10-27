@@ -220,6 +220,29 @@ def getNearestOrientation(goalOrient=MyOrient(), preGripOrient=[MyOrient()]):
             idxNearest = i
     return idxNearest, deltaOrientOut, deltaZOut
 
+def getOrientationDiffList(goalOrient=MyOrient(), preGripOrient=[MyOrient()], maxDiff=math.pi*2):
+    """Gets orientation difference between goal and preGripOrientations
+    by disregarding rotation around Z-Axis
+
+    Args:
+        goalOrient (MyOrient): Goal Orientation. Defaults to MyOrient().
+        preGripOrient (list[MyOrient]): possible preGripOrientations. Defaults to [MyOrient()].
+
+    Returns:
+        list[
+           idx: int, Idx of orientation
+           deltaOrient: MyOrient, Orientation difference without Z
+           deltaZ: MyOrient, Orientation difference in Z
+       ]
+    """
+    sortedPreGrip = []
+    for i, gripOrient in enumerate(preGripOrient):
+        deltaOrient, deltaZ = getOrientDiffNoZ(goalOrient, gripOrient)
+        if math.acos(deltaOrient.w) < maxDiff:
+            sortedPreGrip.append((i, deltaOrient, deltaZ))
+
+    sortedPreGrip.sort(key=lambda x: math.acos(x[1].w))
+    return sortedPreGrip
 
 def getTransformation(listener, fromFrame, toFrame, syncTimePublisher):
     """Express fromFrame in toFrame (transform fromFrame to toFrame)
@@ -372,3 +395,6 @@ if __name__ == '__main__':
     o = MyOrient((0.7071068, 0, 0.0, 0.7071068))  # 45° um x
     o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())
     print(o_diff_rot)
+
+    diff_list = getOrientationDiffList(o, [p1.orientation, pose1, pose2, pose3])
+    print(diff_list)

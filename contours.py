@@ -244,17 +244,54 @@ def getContoursofBiggestObject(contours_closed, minArea=200.0):
 
     return contours_used
 
+def getNearestContourWithHoles(img, sureNoEdge=10, sureEdge=50):
+    """Gets contours by canny-edgeFilter,
+    calculates nearestContour by average depth
+    and returns children inside of nearestContour 
+
+    Args:
+        img ([type]): depth img
+        sureNoEdge ([type]): for Canny
+        sureEdge ([type]): for Canny
+
+    Returns:
+        np.array(contours): first idx is nearest contour, following are childContours
+        np.array(): avg depth of contours
+    """
+    img_temp = copy.copy(img)
+    maxX, maxY = img_temp.shape
+    img_temp[0,:] = 0
+    img_temp[maxY-1,:] = 0
+    img_temp[:,maxX-1] = 0
+    img_temp[:,0] = 0
+
+    canny_img = canny(img_temp, sureNoEdge, sureEdge)
+
+    contours_edgeDetect, _ = contoursFromCannyEdge(canny_img)
+    if not len(contours_edgeDetect): return [], []
+    contours_used = getContoursofBiggestObject(contours_edgeDetect)
+    if not len(contours_used): return [], []
+    # if not len(contours_used): continue
+    avg_vals_contours, childsIdx = getAvgValuesContours(contours_used, img, 3.0)
+    nearest_contourIdx = np.argmin(avg_vals_contours)
+    contour_nearest = contours_used[nearest_contourIdx]
+    # if object fills img:
+    contour_nearest_real = [idxs for idxs in contour_nearest if idxs[0][0] != 0 and idxs[0][0] != maxY-2 and idxs[0][1]!=0 and idxs[0][1]!=maxX-2]
+    contours_used[nearest_contourIdx] = np.array(contour_nearest_real)
+
+    idx_contour_nearest_w_children = np.append(nearest_contourIdx, childsIdx[nearest_contourIdx])
+
+    return contours_used[idx_contour_nearest_w_children], avg_vals_contours[idx_contour_nearest_w_children]
+
 
 if __name__ == "__main__":
-    img = cv.imread(os.path.dirname(__file__) + "/img/Depth.png", cv.IMREAD_GRAYSCALE)
-    canny_img = canny(img, 10, 50)
+    #img = cv.imread(os.path.dirname(__file__) + "/img/Depth.png", cv.IMREAD_GRAYSCALE)
+    max_size = 400
+    img = np.zeros((max_size,max_size)).astype('uint8')
+    img[0:max_size, int(max_size/2):max_size] = 255
+    img[int(max_size/4):int(max_size/4*3), int(max_size/4*3):int(max_size/8*7)] = 0
 
-    contours_edgeDetect = contoursFromCannyEdge(canny_img)
-
-    contour_canny_img = get_drawContours(canny_img, img, True)
-    contour_img = get_drawContours(img)
-    cv.imshow("Contours", contour_img)
-    # cv.waitKey(0)
-    cv.imshow("Canny Contour", contour_canny_img)
-    cv.imshow("Canny", canny_img)
+    contours_used, _ = getNearestContourWithHoles(img)
+    contour_img = drawContours(contours_used, img)
+    cv.imshow("Contours ohne Rand", contour_img)
     cv.waitKey(0)

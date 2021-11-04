@@ -446,7 +446,7 @@ class Filter(object):
 
     def filter(self, frame):
         # frame = self.decimation.process(frame)
-        frame = self.depth_to_disparity.process(frame)
+        frame = self.depth_to_disparity.process(frame)  #ggf gleich disparity aus ir streams?
         frame = self.spatial.process(frame)
         frame = self.temporal.process(frame)
         frame = self.disparity_to_depth.process(frame)

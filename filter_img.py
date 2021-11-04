@@ -3,8 +3,13 @@
 
 import numpy as np
 
-
+# FIR bei gleichem a fuer alle Zeitpunkte:
+# x(n) = y(n)*a + y(n-1)*a + ... + y(0)*a = y(n)*a + x(n-1)
 class LowPassFilter(object):
+    """IIR Filter: x(n) = y(n)*k + x(n-1)*1
+        Args:
+            data_shape: shape of data to filter
+            k = b_0 bei IIR (entspricht a bei FIR)"""
     def __init__(self, data_shape, k=0.2):
         self.integrator = np.zeros(data_shape)
         self.k = k  # omega*control_period

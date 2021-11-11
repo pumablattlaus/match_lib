@@ -283,6 +283,89 @@ def getNearestContourWithHoles(img, sureNoEdge=10, sureEdge=50):
 
     return contours_used[idx_contour_nearest_w_children], avg_vals_contours[idx_contour_nearest_w_children]
 
+def verticalPartOfContour(contour):
+    """Returns only the vertical lines on contour, refined with intermediate points
+
+    Args:
+        contour (contours[i]): output of cv.findContours()[i]  
+
+    Returns:
+        list of contour parts dim=(n,m,1,2)
+    """
+    epsilon = 0.1*cv.arcLength(contour,True)
+    approx = cv.approxPolyDP(contour,epsilon,True)
+
+    # Delete horizontal segments um Kanten parallel zu Normalen der Greifflaechen zu ignorieren
+    approx_out = []
+    lastSplitIdx=0
+    def isHorizontal(p1, p2):
+        delta = (p2 - p1)[0]
+        if abs(delta[0]) > abs(delta[1]):   # or atan
+            return True
+        else:
+            return False
+    
+    def isSameContourPoint(p1,p2):
+        return True if all((p1 == p2)[0]) else False
+
+    for idx in range(len(approx)-1):        
+        if isHorizontal(approx[idx], approx[idx+1]):
+            # split
+            splitIdx = idx+1
+            approx_tmp = approx[lastSplitIdx:splitIdx]
+            print("approx Temp: "+approx_tmp.__str__())
+            lastSplitIdx = splitIdx
+            if len(approx_tmp)>1:
+                approx_out.append(approx_tmp)
+
+    # append remaining points:
+    approx_tmp = approx[lastSplitIdx:]
+    if len(approx_tmp)>1:
+        approx_out.append(approx_tmp)
+
+    # connect last points to first points of list:
+    p1,p2 = approx[idx+1], approx[0]
+    if not isHorizontal(p1,p2):
+        if isSameContourPoint(p1, approx_out[-1][-1]):
+            if isSameContourPoint(approx_out[0][0], p2):
+                # append last segments to first
+                approx_out[0] = np.append(approx_out[-1], approx_out[0],0)
+                approx_out = approx_out[:-1]
+            else:
+                # append first point to last segment
+                approx_out[-1] = np.append(approx_out[-1], p2,0)
+        else:
+            if isSameContourPoint(approx_out[0][0], p2):
+                # append last element to first segment
+                approx_out[0] = np.append(p1, approx_out[0],0)
+            else:
+                # add segment with the two points
+                approx_out.append(np.array([p1,p2]))
+    
+    return approx_out
+
+
+
+        # refine
+def addIntermediatePoints(p1,p2,maxD):
+    line_out=[p1]
+    delta_total = p2-p1
+    numPoints = np.linalg.norm(delta_total)/maxD
+    delta = delta_total/numPoints
+    numPoints = int(numPoints)
+    for i in range(numPoints):
+        nextPoint = line_out[-1]+delta
+        line_out.append(nextPoint)
+    if not all((line_out[-1] == p2)[0]):
+        line_out.append(p2)
+    return line_out
+
+def refineContour(contour, maxD):
+    contour_out = np.zeros((0,1,2))
+    for idx in range(len(contour)-1):
+        contour_out = np.append(contour_out, addIntermediatePoints(contour[idx],contour[idx+1],maxD), 0).astype('int')
+    return contour_out
+
 
 if __name__ == "__main__":
     #img = cv.imread(os.path.dirname(__file__) + "/img/Depth.png", cv.IMREAD_GRAYSCALE)

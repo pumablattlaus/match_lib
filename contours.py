@@ -25,9 +25,9 @@ def canny(depth_img, sureNoEdge, sureEdge):
     return edge_canny_8
 
 
-def get_drawContours(img, drawtoimg=None, canny=False):
+def get_drawContours(img, drawtoimg=None, canny=False, thickness=1, color_in=None):
     if drawtoimg is None:
-        drawtoimg = img
+        drawtoimg = copy.copy(img)
     mask = cv.inRange(img, 5, 255)
     _, contours, hierachy = cv.findContours(mask, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
     depthtorgb = cv.cvtColor(drawtoimg, cv.COLOR_GRAY2RGB)
@@ -36,11 +36,14 @@ def get_drawContours(img, drawtoimg=None, canny=False):
         # if edge detection and there is a parent: next contur
         if canny and hierachy[0][i][3] != -1:
             continue
-
-        color = np.random.choice(range(256), size=3)
-        cv.drawContours(depthtorgb, contours, i, color, 1)
-        cv.imshow("Contours", depthtorgb)
-        cv.waitKey(0)
+        
+        if color_in is None:
+            color = np.random.choice(range(256), size=3)
+        else:
+            color=color_in
+        cv.drawContours(depthtorgb, contours, i, color, thickness)
+        # cv.imshow("Contours", depthtorgb)
+        # cv.waitKey(0)
     return depthtorgb
 
 
@@ -70,12 +73,12 @@ def contoursFromCannyEdge(img):
     return contour_out, closed
 
 
-def drawContours(contours, drawtoimg):
+def drawContours(contours, drawtoimg, thickness=1):
     depthtorgb = cv.cvtColor(drawtoimg, cv.COLOR_GRAY2RGB)
 
     for i in range(len(contours)):
         color = np.random.choice(range(256), size=3)
-        cv.drawContours(depthtorgb, contours, i, color, 1)
+        cv.drawContours(depthtorgb, contours, i, color, thickness)
         # cv.imshow("Contours", depthtorgb)
         # cv.waitKey(0)
     return depthtorgb

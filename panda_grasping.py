@@ -46,7 +46,15 @@ class PandaGripper(object):
         self.status = msg.status
 
     def move(self, width=0.0, eps_out=0.2, eps_in=0.01, force=0.0):
-        print("Grasping Obj")
+        """Moves to width. eps for success
+
+        Args:
+            width (float, optional): goal width. Defaults to 0.0.
+            eps_out (float, optional): outer epsilon. Defaults to 0.2.
+            eps_in (float, optional): inner epsilon. Defaults to 0.01.
+            force (float, optional): Force in N. Defaults to 0.0.
+        """
+        rospy.loginfo("Grasping")
         msg = GraspActionGoal()
         msg.goal.force = force
         msg.goal.speed = 0.1
@@ -63,22 +71,29 @@ class PandaGripper(object):
         self.gotResult = False
 
     def graspObj(self):
+        """closes gripper and checks if object inside
+
+        Returns:
+            bool: success
+        """
         self.move(0.00, 0.001, 0.01, force=0.01)
         while not self.gotResult:
             time.sleep(0.1)
         if not self.success:  # gripper.success:
-            print("Object found!")
+            rospy.loginfo("Object found!")
             # ToDO: /franka_gripper/joint_states .position for comparison if obj lost
             self.move(0.0, 0.2, 0.2, force=50)
             return True
         return False
 
     def graspCancel(self):
-        print("Cancel Grasping")
+        rospy.loginfo("Cancel Grasping")
         self.pubCancel.publish(self.goalId)
 
     def homing(self):
-        print("Homing")
+        """Homing of gripper
+        """
+        rospy.loginfo("Homing")
         self.homingSuccess = False
         msg = HomingActionGoal()
         self.pubHoming.publish(msg)
@@ -87,7 +102,7 @@ class PandaGripper(object):
 
     def homingResult(self, msg=HomingActionResult()):
         self.homingSuccess = msg.result.success
-        print("Homing success: " + self.homingSuccess.__str__())
+        rospy.loginfo("Homing success: " + self.homingSuccess.__str__())
 
 
 if __name__ == "__main__":

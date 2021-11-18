@@ -287,17 +287,17 @@ class MirNav2Goal(object):
             return True
         return False
 
-    def goalReached(self):
-        #  * /mobile_base_controller/cmd_vel [geometry_msgs/Twist]
-        # * /move_base/feedback [move_base_msgs/MoveBaseActionFeedback]
-        # * /move_base/goal [move_base_msgs/MoveBaseActionGoal]
-        # * /move_base/result [move_base_msgs/MoveBaseActionResult]
-        # * /move_base/status [actionlib_msgs/GoalStatusArray] == status_list --> letzter Status
-        # GoalStatusArray.status_list.text=="Goal reached" oder .status == 3?
-        # "Failed to find a valid plan. Even after executing recovery behaviors." .status==4
-        # while .status < 3: sleep
-        # sonst: dist(soll-ist < accuracy) via /robot_pose
-        pass
+    # def goalReached(self):
+    #     #  * /mobile_base_controller/cmd_vel [geometry_msgs/Twist]
+    #     # * /move_base/feedback [move_base_msgs/MoveBaseActionFeedback]
+    #     # * /move_base/goal [move_base_msgs/MoveBaseActionGoal]
+    #     # * /move_base/result [move_base_msgs/MoveBaseActionResult]
+    #     # * /move_base/status [actionlib_msgs/GoalStatusArray] == status_list --> letzter Status
+    #     # GoalStatusArray.status_list.text=="Goal reached" oder .status == 3?
+    #     # "Failed to find a valid plan. Even after executing recovery behaviors." .status==4
+    #     # while .status < 3: sleep
+    #     # sonst: dist(soll-ist < accuracy) via /robot_pose
+    #     pass
 
 
 if __name__ == '__main__':

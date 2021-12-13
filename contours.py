@@ -286,16 +286,17 @@ def getNearestContourWithHoles(img, sureNoEdge=10, sureEdge=50):
 
     return contours_used[idx_contour_nearest_w_children], avg_vals_contours[idx_contour_nearest_w_children]
 
-def verticalPartOfContour(contour):
-    """Returns only the vertical lines on contour, refined with intermediate points
+def verticalPartOfContour(contour, eps=0.1):
+    """Returns only the vertical lines on contour, refined with intermediate points (max: 45deg)
 
     Args:
-        contour (contours[i]): output of cv.findContours()[i]  
+        contour (contours[i]): output of cv.findContours()[i]
+        eps (float): for approximation of contour (epsilon=eps*arcLength)  
 
     Returns:
         list of contour parts dim=(n,m,1,2)
     """
-    epsilon = 0.1*cv.arcLength(contour,True)
+    epsilon = eps*cv.arcLength(contour,True)
     approx = cv.approxPolyDP(contour,epsilon,True)
 
     # Delete horizontal segments um Kanten parallel zu Normalen der Greifflaechen zu ignorieren

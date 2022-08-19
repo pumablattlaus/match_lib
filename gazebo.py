@@ -14,24 +14,24 @@ class GazeboPose:
         Args:
             model_name (str, optional): Defaults to 'mur216'.
         """        
-        self.gazebo_pose_stamped = None
-        self.gazebo_velocity_stamped = None
-        self.gazebo_velocity_stamped_filtered = None
+        self.pose_stamped = None
+        self.velocity_stamped = None
+        self.velocity_stamped_filtered = None
         self.model_name = model_name
     
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.cb_gazebo_pose)
 
     def cb_gazebo_pose(self, msg):
         """get pose and velocity from gazebo"""
-        gazebo_pose = msg.pose[msg.name.index(self.model_name)]
-        gazebo_pose_stamped = PoseStamped()
-        gazebo_pose_stamped.pose.pose = gazebo_pose
-        gazebo_pose_stamped.header.stamp = rospy.Time.now()
-        gazebo_velocity_stamped = self.get_velocity_from_poses(self.gazebo_pose_stamped, gazebo_pose_stamped)
-        if gazebo_velocity_stamped is not None:
-            self.gazebo_velocity_stamped = gazebo_velocity_stamped
-            self.gazebo_velocity_stamped_filtered = gazebo_velocity_stamped # no filtering for now
-        self.gazebo_pose_stamped = gazebo_pose_stamped
+        pose = msg.pose[msg.name.index(self.model_name)]
+        pose_stamped = PoseStamped()
+        pose_stamped.pose = pose
+        pose_stamped.header.stamp = rospy.Time.now()
+        velocity_stamped = self.get_velocity_from_poses(self.pose_stamped, pose_stamped)
+        if velocity_stamped is not None:
+            self.velocity_stamped = velocity_stamped
+            self.velocity_stamped_filtered = velocity_stamped # no filtering for now
+        self.pose_stamped = pose_stamped
 
     def get_velocity_from_poses(self, pose_old=PoseStamped(), pose_new=PoseStamped()):
         """get velocity from two poses"""
@@ -40,10 +40,10 @@ class GazeboPose:
             rospy.loginfo("pose_old or pose_new is None")
             return
 
-        position_old = np.array([pose_old.pose.pose.position.x, pose_old.pose.pose.position.y, pose_old.pose.pose.position.z])
-        position_new = np.array([pose_new.pose.pose.position.x, pose_new.pose.pose.position.y, pose_new.pose.pose.position.z])
-        orientation_old = np.array([pose_old.pose.pose.orientation.x, pose_old.pose.pose.orientation.y, pose_old.pose.pose.orientation.z, pose_old.pose.pose.orientation.w])
-        orientation_new = np.array([pose_new.pose.pose.orientation.x, pose_new.pose.pose.orientation.y, pose_new.pose.pose.orientation.z, pose_new.pose.pose.orientation.w])
+        position_old = np.array([pose_old.pose.position.x, pose_old.pose.position.y, pose_old.pose.position.z])
+        position_new = np.array([pose_new.pose.position.x, pose_new.pose.position.y, pose_new.pose.position.z])
+        orientation_old = np.array([pose_old.pose.orientation.x, pose_old.pose.orientation.y, pose_old.pose.orientation.z, pose_old.pose.orientation.w])
+        orientation_new = np.array([pose_new.pose.orientation.x, pose_new.pose.orientation.y, pose_new.pose.orientation.z, pose_new.pose.orientation.w])
         # quaternion_old = transformations.quaternion_matrix(orientation_old)
         # quaternion_new = transformations.quaternion_matrix(orientation_new)
 
@@ -72,17 +72,17 @@ class GazeboVelocity:
         Args:
             model_name (str, optional): Defaults to 'mur216'.
         """        
-        self.gazebo_velocity_stamped = None
-        self.gazebo_velocity_stamped_filtered = None
+        self.velocity_stamped = None
+        self.velocity_stamped_filtered = None
         self.model_name = model_name
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.cb_gazebo_velocity)
 
     def cb_gazebo_velocity(self, msg):
         """get velocity from gazebo"""
-        gazebo_velocity = msg.twist[msg.name.index(self.model_name)]
-        gazebo_velocity_stamped = TwistStamped(header=Header(stamp=rospy.Time.now()), twist=gazebo_velocity)
-        self.gazebo_velocity_stamped = gazebo_velocity_stamped
-        self.gazebo_velocity_stamped_filtered = gazebo_velocity_stamped # no filtering for now
+        velocity = msg.twist[msg.name.index(self.model_name)]
+        velocity_stamped = TwistStamped(header=Header(stamp=rospy.Time.now()), twist=velocity)
+        self.velocity_stamped = velocity_stamped
+        self.velocity_stamped_filtered = velocity_stamped # no filtering for now
 
 if __name__ == '__main__':
     rospy.init_node('gazebo_pose')
@@ -90,6 +90,10 @@ if __name__ == '__main__':
     gazebo_velocity = GazeboVelocity()
     rate = rospy.Rate(10)
     while not rospy.is_shutdown():
-        print(gazebo_pose.gazebo_pose_stamped)
-        print(gazebo_velocity.gazebo_velocity_stamped)
+        if gazebo_velocity.velocity_stamped and gazebo_pose.pose_stamped is not None:
+            break
+        rate.sleep()
+    while not rospy.is_shutdown():
+        print(f"Pose: {gazebo_pose.pose_stamped}")
+        print(f"velocity:  {gazebo_velocity.velocity_stamped}")
         rate.sleep()

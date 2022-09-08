@@ -10,8 +10,8 @@ from actionlib_msgs.msg import *
 import std_msgs.msg as std_msg
 import numpy as np
 # import quaternion
-from panda_grasping import *
-from match_geometry import *
+from match_lib.panda_grasping import *
+from match_lib.match_geometry import *
 import tf
 from tf import transformations
 from tf import ExtrapolationException

@@ -208,7 +208,7 @@ class MirNav2Goal(object):
         self.ready = True
 
         # rospy.init_node('my_moveGoal', anonymous=False)
-        self.pub = rospy.Publisher(mir_prefix + '/move_base_simple/goal', PoseStamped, queue_size=1)
+        self.pub = rospy.Publisher(mir_prefix + '/move_base_simple/goal', PoseStamped, queue_size=1, latch=True)
 
         sub_status = rospy.Subscriber(mir_prefix + '/move_base/status', GoalStatusArray, self.status_callback)
 
@@ -252,6 +252,7 @@ class MirNav2Goal(object):
         self.ready = False
         poseMsg = PoseStamped()
         poseMsg.header.frame_id = "map"
+        poseMsg.header.stamp = rospy.Time.now()
         poseMsg.pose = pose
 
         self.pub.publish(poseMsg)

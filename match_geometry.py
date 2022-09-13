@@ -341,6 +341,19 @@ def transformPoseMsgToFrame(listener, syncTimePublisher, frame, p_msg=PoseStampe
     p = MyPose(p_msg_new.pose)
     return p
 
+def inverseTransformationMat(mat):
+    """Inverts Transformation Matrix
+
+    Args:
+        mat (np.array): Transformation Matrix
+
+    Returns:
+        np.array: Inverted Transformation Matrix
+    """
+    matInv = np.eye(4)
+    matInv[:3, :3] = mat[:3, :3].T
+    matInv[:3, 3] = -mat[:3, :3].T @ mat[:3, 3]
+    return matInv
 
 if __name__ == '__main__':
     rospy.init_node("Test_geom")

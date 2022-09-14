@@ -4,18 +4,51 @@ import copy
 import math
 import rospy
 import moveit_commander
-from geometry_msgs.msg import PoseStamped, Point, Quaternion, Twist, Pose
 import moveit_msgs.msg
+from geometry_msgs.msg import PoseStamped, Point, Quaternion, Twist, Pose
+from sensor_msgs.msg import JointState
 from actionlib_msgs.msg import *
 import std_msgs.msg as std_msg
 import numpy as np
 # import quaternion
-from match_lib.panda_grasping import *
-from match_lib.match_geometry import *
+from .panda_grasping import *
+from .match_geometry import *
+from .robot_mats.jacobians.jacobian_ur_16_eef import getJacobianUr16_base_link_inertiaUr16_wrist_3_link as getJacobianManipulator
+from .robot_mats.transformations.transform_ur16_base_link_eef import getTransform as getTransformManipulator, getVector_eef
+from .robot_mats.jacobians.jacobian_platform import getJacobianPlatform, getJacobianPlatformWithEEF, getRotationMatrixS3
 import tf
 from tf import transformations
 from tf import ExtrapolationException
 
+class Joints():
+    def __init__(self, T=getTransformManipulator, J=getJacobianManipulator, joint_names=None, ns=""):
+        """Class to get the joint angles, transformation and jacobian of a robot
+
+        Args:
+            T (func, optional): Defaults to getTransformManipulator.
+            J (func, optional): Defaults to getJacobianManipulator.
+            joint_names (list(string), optional): Defaults to ['UR16/shoulder_pan_joint', 'UR16/shoulder_lift_joint', 'UR16/elbow_joint', 'UR16/wrist_1_joint', 'UR16/wrist_2_joint', 'UR16/wrist_3_joint'].
+            ns (str, optional): Robot namespace if not launched in group (i.e. "/mur216/"). Defaults to "".
+        """
+        rospy.Subscriber(ns+"joint_states", JointState, self.cb_joint_states)
+        self.rate = rospy.Rate(10)
+        self.T = T
+        self.J = J
+        if joint_names is None:
+            self.joint_names = ['UR16/shoulder_pan_joint', 'UR16/shoulder_lift_joint', 'UR16/elbow_joint', 'UR16/wrist_1_joint', 'UR16/wrist_2_joint', 'UR16/wrist_3_joint']
+        else:
+            self.joint_names = joint_names
+        self.q = np.zeros(len(self.joint_names))
+
+    def cb_joint_states(self, msg=JointState()):
+        for i in range(len(self.joint_names)):
+            self.q[i] = msg.position[msg.name.index(self.joint_names[i])]
+
+    def getTransformation(self):
+        return self.T(self.q)
+
+    def getJacobian(self):
+        return self.J(self.q)
 
 class PandaGoals(object):
     def __init__(self, pose_relative_pre=MyPose(), axis_goal=[], pose_relative_grip=MyPose()):

@@ -2,6 +2,7 @@
 
 from math import sin, cos, pi
 import numpy as np
+from geometry_msgs.msg import Vector3
 
 def getTransform(q):
     T = np.zeros((4, 4))
@@ -34,6 +35,28 @@ def getTransform(q):
     T[3:5,:]=-1*T[3:5,:]
 
     return T
+
+def getVector_eef(q):
+    """Get vector from base_link to end effector
+
+    Args:
+        q (list): joint angles
+
+    Returns:
+        Vector3: last column of T matrix
+    """
+    shoulder_pan=q[0]
+    shoulder_lift=q[1]
+    elbow=q[2]
+    wrist_1=q[3]
+    wrist_2=q[4]
+    wrist_3=q[5]
+    rx=-1*(-0.11655*(1.0*(-1.0*(2.05103428515331e-10*sin(shoulder_lift)*sin(shoulder_pan) + 1.0*cos(shoulder_lift)*cos(shoulder_pan))*sin(elbow) + 1.0*(-1.0*sin(shoulder_lift)*cos(shoulder_pan) + 2.05103428515331e-10*sin(shoulder_pan)*cos(shoulder_lift))*cos(elbow))*sin(wrist_1) + 1.0*(1.0*(2.05103428515331e-10*sin(shoulder_lift)*sin(shoulder_pan) + 1.0*cos(shoulder_lift)*cos(shoulder_pan))*cos(elbow) + 1.0*(-1.0*sin(shoulder_lift)*cos(shoulder_pan) + 2.05103428515331e-10*sin(shoulder_pan)*cos(shoulder_lift))*sin(elbow))*cos(wrist_1))*sin(wrist_2) - 2.39048045934618e-11*(1.0*(-1.0*(2.05103428515331e-10*sin(shoulder_lift)*sin(shoulder_pan) + 1.0*cos(shoulder_lift)*cos(shoulder_pan))*sin(elbow) + 1.0*(-1.0*sin(shoulder_lift)*cos(shoulder_pan) + 2.05103428515331e-10*sin(shoulder_pan)*cos(shoulder_lift))*cos(elbow))*cos(wrist_1) - 1.0*(1.0*(2.05103428515331e-10*sin(shoulder_lift)*sin(shoulder_pan) + 1.0*cos(shoulder_lift)*cos(shoulder_pan))*cos(elbow) + 1.0*(-1.0*sin(shoulder_lift)*cos(shoulder_pan) + 2.05103428515331e-10*sin(shoulder_pan)*cos(shoulder_lift))*sin(elbow))*sin(wrist_1))*cos(wrist_2) - 0.119849999976095*(-1.0*(2.05103428515331e-10*sin(shoulder_lift)*sin(shoulder_pan) + 1.0*cos(shoulder_lift)*cos(shoulder_pan))*sin(elbow) + 1.0*(-1.0*sin(shoulder_lift)*cos(shoulder_pan) + 2.05103428515331e-10*sin(shoulder_pan)*cos(shoulder_lift))*cos(elbow))*cos(wrist_1) + 0.119849999976095*(1.0*(2.05103428515331e-10*sin(shoulder_lift)*sin(shoulder_pan) + 1.0*cos(shoulder_lift)*cos(shoulder_pan))*cos(elbow) + 1.0*(-1.0*sin(shoulder_lift)*cos(shoulder_pan) + 2.05103428515331e-10*sin(shoulder_pan)*cos(shoulder_lift))*sin(elbow))*sin(wrist_1) - 0.36*(2.05103428515331e-10*sin(shoulder_lift)*sin(shoulder_pan) + 1.0*cos(shoulder_lift)*cos(shoulder_pan))*cos(elbow) - 0.36*(-1.0*sin(shoulder_lift)*cos(shoulder_pan) + 2.05103428515331e-10*sin(shoulder_pan)*cos(shoulder_lift))*sin(elbow) - 9.81214802017344e-11*sin(shoulder_lift)*sin(shoulder_pan) + 0.11655*sin(shoulder_pan)*cos(wrist_2) + 0.174149999975418*sin(shoulder_pan) - 0.4784*cos(shoulder_lift)*cos(shoulder_pan))
+    ry=-1*(-2.39048045934618e-11*(-1.0*(1.0*(-1.0*sin(shoulder_lift)*sin(shoulder_pan) - 2.05103428515331e-10*cos(shoulder_lift)*cos(shoulder_pan))*sin(elbow) + 1.0*(-2.05103428515331e-10*sin(shoulder_lift)*cos(shoulder_pan) + 1.0*sin(shoulder_pan)*cos(shoulder_lift))*cos(elbow))*sin(wrist_1) + 1.0*(1.0*(-1.0*sin(shoulder_lift)*sin(shoulder_pan) - 2.05103428515331e-10*cos(shoulder_lift)*cos(shoulder_pan))*cos(elbow) - 1.0*(-2.05103428515331e-10*sin(shoulder_lift)*cos(shoulder_pan) + 1.0*sin(shoulder_pan)*cos(shoulder_lift))*sin(elbow))*cos(wrist_1))*cos(wrist_2) - 0.11655*(1.0*(1.0*(-1.0*sin(shoulder_lift)*sin(shoulder_pan) - 2.05103428515331e-10*cos(shoulder_lift)*cos(shoulder_pan))*sin(elbow) + 1.0*(-2.05103428515331e-10*sin(shoulder_lift)*cos(shoulder_pan) + 1.0*sin(shoulder_pan)*cos(shoulder_lift))*cos(elbow))*cos(wrist_1) + 1.0*(1.0*(-1.0*sin(shoulder_lift)*sin(shoulder_pan) - 2.05103428515331e-10*cos(shoulder_lift)*cos(shoulder_pan))*cos(elbow) - 1.0*(-2.05103428515331e-10*sin(shoulder_lift)*cos(shoulder_pan) + 1.0*sin(shoulder_pan)*cos(shoulder_lift))*sin(elbow))*sin(wrist_1))*sin(wrist_2) + 0.119849999976095*(1.0*(-1.0*sin(shoulder_lift)*sin(shoulder_pan) - 2.05103428515331e-10*cos(shoulder_lift)*cos(shoulder_pan))*sin(elbow) + 1.0*(-2.05103428515331e-10*sin(shoulder_lift)*cos(shoulder_pan) + 1.0*sin(shoulder_pan)*cos(shoulder_lift))*cos(elbow))*sin(wrist_1) - 0.119849999976095*(1.0*(-1.0*sin(shoulder_lift)*sin(shoulder_pan) - 2.05103428515331e-10*cos(shoulder_lift)*cos(shoulder_pan))*cos(elbow) - 1.0*(-2.05103428515331e-10*sin(shoulder_lift)*cos(shoulder_pan) + 1.0*sin(shoulder_pan)*cos(shoulder_lift))*sin(elbow))*cos(wrist_1) - 0.36*(-1.0*sin(shoulder_lift)*sin(shoulder_pan) - 2.05103428515331e-10*cos(shoulder_lift)*cos(shoulder_pan))*sin(elbow) - 0.36*(-2.05103428515331e-10*sin(shoulder_lift)*cos(shoulder_pan) + 1.0*sin(shoulder_pan)*cos(shoulder_lift))*cos(elbow) + 9.81214802017344e-11*sin(shoulder_lift)*cos(shoulder_pan) - 0.4784*sin(shoulder_pan)*cos(shoulder_lift) - 0.11655*cos(shoulder_pan)*cos(wrist_2) - 0.174149999975418*cos(shoulder_pan))
+    rz=-0.11655*(1.0*(-1.0*sin(elbow)*sin(shoulder_lift) + 1.0*cos(elbow)*cos(shoulder_lift))*sin(wrist_1) + 1.0*(1.0*sin(elbow)*cos(shoulder_lift) + 1.0*sin(shoulder_lift)*cos(elbow))*cos(wrist_1))*sin(wrist_2) - 2.39048045934618e-11*(1.0*(-1.0*sin(elbow)*sin(shoulder_lift) + 1.0*cos(elbow)*cos(shoulder_lift))*cos(wrist_1) - 1.0*(1.0*sin(elbow)*cos(shoulder_lift) + 1.0*sin(shoulder_lift)*cos(elbow))*sin(wrist_1))*cos(wrist_2) - 0.119849999976095*(-1.0*sin(elbow)*sin(shoulder_lift) + 1.0*cos(elbow)*cos(shoulder_lift))*cos(wrist_1) + 0.119849999976095*(1.0*sin(elbow)*cos(shoulder_lift) + 1.0*sin(shoulder_lift)*cos(elbow))*sin(wrist_1) - 0.36*sin(elbow)*cos(shoulder_lift) - 0.36*sin(shoulder_lift)*cos(elbow) - 0.4784*sin(shoulder_lift) - 2.39048045934618e-11*cos(wrist_2) + 0.180699999964281
+    r = Vector3(rx, ry, rz)
+    return r
+
 
 
 if __name__ == "__main__":

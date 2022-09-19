@@ -50,6 +50,13 @@ class Joints():
     def getJacobian(self):
         return self.J(self.q)
 
+    def getPose_eef(self):
+        R=np.zeros((4,4))
+        R[:3,:3]=self.getTransformation()[:3,:3]
+        R[3,3]=1
+        quaternions = transformations.quaternion_from_matrix(R)
+        return Pose(position=Point(*self.getTransformation()[:3,3]), orientation=Quaternion(*quaternions))
+
 class PandaGoals(object):
     def __init__(self, pose_relative_pre=MyPose(), axis_goal=[], pose_relative_grip=MyPose()):
         if len(axis_goal) < 7:

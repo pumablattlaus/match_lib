@@ -6,6 +6,7 @@ import numpy as np
 from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, Twist, TwistStamped,Pose
 from gazebo_msgs.msg import ModelStates
+from .filter_img import LowPassFilter
 
 class GazeboPose:
     def __init__(self, model_name='mur216'):
@@ -18,6 +19,8 @@ class GazeboPose:
         self.velocity_stamped = None
         self.velocity_stamped_filtered = None
         self.model_name = model_name
+        self.filter_t = LowPassFilter((1,3), 0.9)
+        self.filter_r = LowPassFilter((1,3), 0.9)
     
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.cb_gazebo_pose)
 
@@ -30,7 +33,7 @@ class GazeboPose:
         velocity_stamped = self.get_velocity_from_poses(self.pose_stamped, pose_stamped)
         if velocity_stamped is not None:
             self.velocity_stamped = velocity_stamped
-            self.velocity_stamped_filtered = velocity_stamped # no filtering for now
+            self.velocity_stamped_filtered = self.filter_velocity(velocity_stamped) # no filtering for now
         self.pose_stamped = pose_stamped
 
     def get_velocity_from_poses(self, pose_old=PoseStamped(), pose_new=PoseStamped()):
@@ -64,6 +67,9 @@ class GazeboPose:
         velocity.header.stamp = pose_new.header.stamp
 
         return velocity
+    
+    def filter_velocity(self, velocity_stamped):
+        return filter_velocity(self.filter_t, self.filter_r, velocity_stamped)
 
 class GazeboVelocity:
     def __init__(self, model_name='mur216'):
@@ -75,6 +81,8 @@ class GazeboVelocity:
         self.velocity_stamped = None
         self.velocity_stamped_filtered = None
         self.model_name = model_name
+        self.filter_t = LowPassFilter((1,3), 0.9)
+        self.filter_r = LowPassFilter((1,3), 0.9)
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.cb_gazebo_velocity)
 
     def cb_gazebo_velocity(self, msg):
@@ -82,7 +90,25 @@ class GazeboVelocity:
         velocity = msg.twist[msg.name.index(self.model_name)]
         velocity_stamped = TwistStamped(header=Header(stamp=rospy.Time.now()), twist=velocity)
         self.velocity_stamped = velocity_stamped
-        self.velocity_stamped_filtered = velocity_stamped # no filtering for now
+        self.velocity_stamped_filtered = self.filter_velocity(velocity_stamped)
+
+    def filter_velocity(self, velocity_stamped):
+        return filter_velocity(self.filter_t, self.filter_r, velocity_stamped)
+
+def filter_velocity(filter_t, filter_r, velocity_stamped=TwistStamped()):
+    """filter velocity"""
+    velocity_stamped_filtered = TwistStamped()
+    velocity_stamped_filtered.header = velocity_stamped.header
+    vel_t = filter_t.filter([velocity_stamped.twist.linear.__reduce__()[2]])
+    vel_r = filter_r.filter([velocity_stamped.twist.angular.__reduce__()[2]])
+    velocity_stamped_filtered.twist.linear.x = vel_t[0,0]
+    velocity_stamped_filtered.twist.linear.y = vel_t[0,1]
+    velocity_stamped_filtered.twist.linear.z = vel_t[0,2]
+    velocity_stamped_filtered.twist.angular.x = vel_r[0,0]
+    velocity_stamped_filtered.twist.angular.y = vel_r[0,1]
+    velocity_stamped_filtered.twist.angular.z = vel_r[0,2]
+    return velocity_stamped_filtered
+        
 
 if __name__ == '__main__':
     rospy.init_node('gazebo_pose')

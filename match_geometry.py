@@ -15,7 +15,7 @@ import rospy
 
 class MyPoint(Point):
     def __init__(self, pos=(0.0, 0.0, 0.0)):
-        if type(pos) == Point or type(pos) == MyPoint:
+        if isinstance(pos, Point):
             self._asArray = np.array(pos.__reduce__()[2])
         else:
             self._asArray = np.array(pos)
@@ -58,7 +58,7 @@ class MyPointStamped(PointStamped):
 
 class MyOrient(Quaternion):
     def __init__(self, quatern=(0.0, 0.0, 0.0, 1.0)):
-        if type(quatern) == Quaternion or type(quatern) == MyOrient:
+        if isinstance(quatern, Quaternion):
             self._asArray = np.array(quatern.__reduce__()[2])
         else:
             self._asArray = np.array(quatern)
@@ -77,7 +77,7 @@ class MyOrient(Quaternion):
 
 class MyPose(Pose):
     def __init__(self, pos=(0.0, 0.0, 0.0), quatern=(0.0, 0.0, 0.0, 1.0)):
-        if type(pos) == Pose or type(pos) == MyPose:
+        if isinstance(pos, Pose):
             point = MyPoint(pos.position)
             orient = MyOrient(pos.orientation)
         else:
@@ -100,9 +100,9 @@ class MyPose(Pose):
         return p_out
 
     def rotateVector(self, vec=None, rot=None):
-        if vec == None:
+        if vec is None:
             vec = self.position.asArray()
-        if rot == None:
+        if rot is None:
             rot = self.orientation.asArray()
         return rotateVector(vec, rot)
 
@@ -137,7 +137,7 @@ def rotationDiffRotated(rot_diff=(0.0, 0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0),
 
 
 def rotateToXAxis(points, axis=(0, 1), transpose=False):
-    """Rotate list of points to from X-Axis to new axis 
+    """Rotate list of points to from X-Axis to new axis
 
     Args:
         points ([[[x1, y1]], [[x2,y2]],...]): list of points to rotate
@@ -220,6 +220,7 @@ def getNearestOrientation(goalOrient=MyOrient(), preGripOrient=[MyOrient()]):
             idxNearest = i
     return idxNearest, deltaOrientOut, deltaZOut
 
+
 def getOrientationDiffList(goalOrient=MyOrient(), preGripOrient=[MyOrient()], maxDiff=math.pi*2):
     """Gets orientation difference between goal and preGripOrientations
     by disregarding rotation around Z-Axis
@@ -289,7 +290,7 @@ def _transformMsgToFrame(listener, syncTimePublisher, frame, p_msg, func_transf=
         listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
         p_msg_new = func_transf(frame, p_msg)
     except:  # ExtrapolationException:
-        syncTimePublisher.publish(std_msgs.msg.Bool(True))
+        syncTimePublisher.publish(std_msg.Bool(True))
         time.sleep(0.5)
         now = rospy.Time.now()
         listener.waitForTransform(p_msg.header.frame_id, frame, now, rospy.Duration(4.0))
@@ -399,11 +400,11 @@ if __name__ == '__main__':
 
     # Orientation:
     o_diff = MyOrient((0, 0, 0.7071068, 0.7071068))
-    print(rotateVector((1, 0, 0, 1), o_diff.asArray()))
+    print(f"{rotateVector((1, 0, 0, 1), o_diff.asArray()) = }")
 
     o = MyOrient()  # 0°
     o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())
-    print(o_diff_rot)  # 0°
+    print(f"{o_diff_rot = }")  # 0°
 
     o = MyOrient((0.7071068, 0, 0.0, 0.7071068))  # 45° um x
     o_diff_rot = rotationDiffRotated(o.asArray(), o_diff.asArray())

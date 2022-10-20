@@ -61,7 +61,7 @@ def getJacobianUr16_base_link_inertiaUr16_wrist_3_link(q):
     J[5,5]=(-1.0*(-1.0*sin(elbow)*sin(shoulder_lift) + 1.0*cos(elbow)*cos(shoulder_lift))*sin(wrist_1) - 1.0*(1.0*sin(elbow)*cos(shoulder_lift) + 1.0*sin(shoulder_lift)*cos(elbow))*cos(wrist_1))*sin(wrist_2) + (1.22464679889617e-16*(-1.0*sin(elbow)*sin(shoulder_lift) + 1.0*cos(elbow)*cos(shoulder_lift))*sin(wrist_1) + 1.22464679889617e-16*(1.0*sin(elbow)*cos(shoulder_lift) + 1.0*sin(shoulder_lift)*cos(elbow))*cos(wrist_1))*cos(wrist_2) - (2.51179257173931e-26*(-1.0*sin(elbow)*sin(shoulder_lift) + 1.0*cos(elbow)*cos(shoulder_lift))*cos(wrist_1) - 2.51179257173931e-26*(1.0*sin(elbow)*cos(shoulder_lift) + 1.0*sin(shoulder_lift)*cos(elbow))*sin(wrist_1))*sin(wrist_2) - (2.05103428515331e-10*(-1.0*sin(elbow)*sin(shoulder_lift) + 1.0*cos(elbow)*cos(shoulder_lift))*cos(wrist_1) - 2.05103428515331e-10*(1.0*sin(elbow)*cos(shoulder_lift) + 1.0*sin(shoulder_lift)*cos(elbow))*sin(wrist_1))*cos(wrist_2) + (-2.05103550980011e-10*sin(elbow)*sin(shoulder_lift) + 2.05103550980011e-10*cos(elbow)*cos(shoulder_lift))*cos(wrist_1) - (2.05103550980011e-10*sin(elbow)*cos(shoulder_lift) + 2.05103550980011e-10*sin(shoulder_lift)*cos(elbow))*sin(wrist_1) - 2.51179257173931e-26*sin(wrist_2) - 2.05103428515331e-10*cos(wrist_2) - 8.62817648188602e-30
 
     # Transform to base_link
-    J[0:2,:]=-1*J[0:2,:]
-    J[3:5,:]=-1*J[3:5,:]
+    # J[0:2,:]=-1*J[0:2,:]
+    # J[3:5,:]=-1*J[3:5,:]
 
     return J

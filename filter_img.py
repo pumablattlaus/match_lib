@@ -18,6 +18,39 @@ class LowPassFilter(object):
         data = np.array(data).astype("float")
         self.integrator = np.abs(self.integrator + (data - self.integrator) * self.k)
         return self.integrator
+    
+class MovingAvg(object):
+    #TODO: add shape
+    def __init__(self, filter_len):
+        self.__filter_len = filter_len
+        self.vals = np.zeros(filter_len)
+        # self.mean = 0.0
+
+    def update(self, data):
+        """update filter with new data
+        #TODO: check for speed 
+
+        Args:
+            data (float): new data
+
+        Returns:
+            float: mean of filter
+        """
+        # self.mean = self.mean + (data - self.vals[0]) / self.__filter_len
+        # self.vals[:-1] = self.vals[1:]
+        # self.vals[-1] = data
+        
+        # self.vals[:-1] = self.vals[1:]
+        # self.vals[-1] = data
+        # self.mean = np.mean(self.vals)
+        # return self.mean
+    
+        self.vals = np.roll(self.vals, 1)
+        self.vals[0] = data
+        return np.mean(self.vals)
+        
+        return self.mean
+        
 
 
 def main():

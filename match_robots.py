@@ -30,7 +30,9 @@ class Joints():
             joint_names (list(string), optional): Defaults to ['UR16/shoulder_pan_joint', 'UR16/shoulder_lift_joint', 'UR16/elbow_joint', 'UR16/wrist_1_joint', 'UR16/wrist_2_joint', 'UR16/wrist_3_joint'].
             ns (str, optional): Robot namespace if not launched in group (i.e. "/mur216/"). Defaults to "".
         """
-        rospy.Subscriber(ns+"joint_states", JointState, self.cb_joint_states)
+        topic = ns+"joint_states"
+        rospy.logdebug(f"Joints class subscribed to {topic}")
+        rospy.Subscriber(topic, JointState, self.cb_joint_states)
         self.rate = rospy.Rate(10)
         self.T = T
         self.J = J

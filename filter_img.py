@@ -21,20 +21,21 @@ class LowPassFilter(object):
     
 class MovingAvg(object):
     #TODO: add shape
-    def __init__(self, filter_len):
+    def __init__(self, filter_len, num_data=1):
         self.__filter_len = filter_len
-        self.vals = np.zeros(filter_len)
-        # self.mean = 0.0
+        self.__num_data = num_data
+        self.vals = np.zeros((num_data, filter_len), dtype="float")
+        self.__mean = 0.0
 
-    def update(self, data):
+    def update(self, data: np.ndarray):
         """update filter with new data
         #TODO: check for speed 
 
         Args:
-            data (float): new data
+            data (np.ndarray(num_data)): new data
 
         Returns:
-            float: mean of filter
+            np.ndarray(num_data, dtype="float"): mean of filter
         """
         # self.mean = self.mean + (data - self.vals[0]) / self.__filter_len
         # self.vals[:-1] = self.vals[1:]
@@ -45,11 +46,35 @@ class MovingAvg(object):
         # self.mean = np.mean(self.vals)
         # return self.mean
     
-        self.vals = np.roll(self.vals, 1)
-        self.vals[0] = data
-        return np.mean(self.vals)
+        self.vals = np.roll(self.vals, 1, axis=1)
+        self.vals[:,0] = data
+        self.__mean = np.mean(self.vals,1)
+    
+        return self.__mean
+    
+    @property
+    def mean(self):
+        return self.__mean
+    
+    @property
+    def filter_len(self):
+        return self.__filter_len
+    
+    @filter_len.setter
+    def filter_len(self, filter_len):
+        self.__filter_len = filter_len
+        vals_new = np.zeros((self.__num_data, filter_len), dtype="float") # len isnt necessary the same as filter_len
+        self.vals = np.concatenate((self.vals,vals_new), axis=1)[:,:filter_len]
         
-        return self.mean
+    @property
+    def num_data(self):
+        return self.__num_data
+    
+    @num_data.setter
+    def num_data(self, num_data):
+        self.__num_data = num_data
+        vals_new = np.zeros((num_data, self.__filter_len), dtype="float")
+        self.vals = np.concatenate((self.vals,vals_new), axis=0)[:num_data,:]
         
 
 

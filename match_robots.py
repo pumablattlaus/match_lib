@@ -41,10 +41,13 @@ class Joints():
         else:
             self.joint_names = joint_names
         self.q = np.zeros(len(self.joint_names))
+        self.q_dot = np.zeros(len(self.joint_names))
 
     def cb_joint_states(self, msg=JointState()):
         for i in range(len(self.joint_names)):
-            self.q[i] = msg.position[msg.name.index(self.joint_names[i])]
+            idx=msg.name.index(self.joint_names[i])
+            self.q[i] = msg.position[idx]
+            self.q_dot[i] = msg.velocity[idx]
 
     def getTransformation(self):
         return self.T(self.q)

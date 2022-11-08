@@ -13,8 +13,8 @@ import numpy as np
 class RobotKinDyn(object):
     def __init__(self, base_link: str, end_link: str, urdf_file_name: Optional[str], urdf_string: Optional[str]) -> None:
         if urdf_file_name is not None:
-            urdf_string = open(urdf_file_name, 'r').read()
-            f.close()
+            with open(urdf_file_name, 'r') as f:
+                urdf_string = f.read()
         else:
             if urdf_string is None:
                 raise ValueError('urdf_file_name and urdf_string are None')
@@ -38,7 +38,7 @@ class RobotKinDyn(object):
         """ Returns the mass matrix of the robot in the base frame """
         if len(joint_positions) != self.num_joints:
             raise ValueError(f'joint_positions has wrong size! Correct size is {self.num_joints}')
-        self.dyn_kdl.JntToMass(joint_list_to_kdl(q), self.kdl_inertia)
+        self.dyn_kdl.JntToMass(joint_list_to_kdl(joint_positions), self.kdl_inertia)
         mass_mat = np.array([[self.kdl_inertia[row, column] for row in range(self.kdl_inertia.rows())]
                              for column in range(self.kdl_inertia.columns())])
         return mass_mat
@@ -49,7 +49,7 @@ class RobotKinDyn(object):
             raise ValueError(f'joint_positions or velocities has wrong size! Correct size is {self.num_joints}')
         
         self.dyn_kdl.JntToCoriolis(joint_list_to_kdl(joint_positions), joint_list_to_kdl(joint_velocities), self.coriolis)
-        return np.array(self.coriolis)
+        return np.array([self.coriolis[row] for row in range(self.coriolis.rows())])
     
     
 if __name__ == '__main__':

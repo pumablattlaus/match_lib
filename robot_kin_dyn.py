@@ -10,6 +10,9 @@ from pykdl_utils.kdl_parser import kdl_tree_from_urdf_model
 from urdf_parser_py.urdf import Robot
 import numpy as np
 
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Pose
+
 class RobotKinDyn(object):
     def __init__(self, base_link: str, end_link: str, urdf_file_name: Optional[str], urdf_string: Optional[str]) -> None:
         if urdf_file_name is not None:
@@ -52,11 +55,12 @@ class RobotKinDyn(object):
         return np.array([self.coriolis[row] for row in range(self.coriolis.rows())])
     
 class VelocityObserverMiR:
-    def __init__(self, dt: float, init_pose: np.ndarray, k: np.ndarray) -> None:
-        self.dt = dt
+    def __init__(self, init_pose: np.ndarray, k: np.ndarray) -> None:
+        self.old_time = None
+        self.dt = 0.0
         self.pose_by_integration = init_pose
         self._v_hat = np.zeros(3) #x',y',theta'
-        self.k = k
+        self.k = np.array(k)
         
         # set before calc_velocity is called
         self._v_odom = np.zeros(3) #x',y',theta'
@@ -64,9 +68,7 @@ class VelocityObserverMiR:
     
     def calc_velocity(self) -> np.ndarray:
         """calculates the velocity of the robot based on the odometry and the actual pose. v_
-
-        Returns:
-            np.ndarray: _description_
+        # TODO: pose_by_integration richtig berechnen (via theta)
         """
         # or use IntegralTrapez?
         self.pose_by_integration = self.pose_by_integration + self.dt * self._v_hat
@@ -75,23 +77,35 @@ class VelocityObserverMiR:
         
     @property
     def v_hat(self) -> np.ndarray:
+        # return self._v_hat[[0,2]] #x',theta'
         return self._v_hat
         
     @property
     def pose_actual(self) -> np.ndarray:
         return self._pose_actual
     
-    @pose_by_integration.setter
-    def pose_by_integration(self, pose_actual: np.ndarray) -> None:
-        self._pose_actual = pose_actual
+    @pose_actual.setter
+    def pose_actual(self, pose_actual: Pose) -> None:
+        # theta = 2*np.arctan2(pose_actual.orientation.z, pose_actual.orientation.w)
+        theta = 2*np.arccos(pose_actual.orientation.w)
+        self._pose_actual = np.array([pose_actual.position.x, pose_actual.position.y, theta])
         
     @property
     def v_odom(self) -> np.ndarray:
         return self._v_odom
     
     @v_odom.setter
-    def v_odom(self, v_odom: np.ndarray) -> None:
-        self._v_odom = v_odom #ggf umrechnen in x',y',theta'
+    def v_odom(self, v_odom: Odometry) -> None:
+        msg_time = v_odom.header.stamp
+        try:
+            self.dt = (msg_time - self.old_time).to_sec()
+            self.old_time = msg_time
+            # umrechnen in x',y',theta':
+            self._v_odom = np.array([v_odom.twist.twist.linear.x,0,v_odom.twist.twist.angular.z])
+            self.calc_velocity()
+        except TypeError: # first time
+            self.old_time = msg_time
+        
     
     
 if __name__ == '__main__':

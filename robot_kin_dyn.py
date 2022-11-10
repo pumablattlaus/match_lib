@@ -51,6 +51,48 @@ class RobotKinDyn(object):
         self.dyn_kdl.JntToCoriolis(joint_list_to_kdl(joint_positions), joint_list_to_kdl(joint_velocities), self.coriolis)
         return np.array([self.coriolis[row] for row in range(self.coriolis.rows())])
     
+class VelocityObserverMiR:
+    def __init__(self, dt: float, init_pose: np.ndarray, k: np.ndarray) -> None:
+        self.dt = dt
+        self.pose_by_integration = init_pose
+        self._v_hat = np.zeros(3) #x',y',theta'
+        self.k = k
+        
+        # set before calc_velocity is called
+        self._v_odom = np.zeros(3) #x',y',theta'
+        self._pose_actual = np.zeros(3) #x,y,theta
+    
+    def calc_velocity(self) -> np.ndarray:
+        """calculates the velocity of the robot based on the odometry and the actual pose. v_
+
+        Returns:
+            np.ndarray: _description_
+        """
+        # or use IntegralTrapez?
+        self.pose_by_integration = self.pose_by_integration + self.dt * self._v_hat
+        pose_error = self._pose_actual - self.pose_by_integration
+        self._v_hat = self._v_odom + self.k*pose_error
+        
+    @property
+    def v_hat(self) -> np.ndarray:
+        return self._v_hat
+        
+    @property
+    def pose_actual(self) -> np.ndarray:
+        return self._pose_actual
+    
+    @pose_by_integration.setter
+    def pose_by_integration(self, pose_actual: np.ndarray) -> None:
+        self._pose_actual = pose_actual
+        
+    @property
+    def v_odom(self) -> np.ndarray:
+        return self._v_odom
+    
+    @v_odom.setter
+    def v_odom(self, v_odom: np.ndarray) -> None:
+        self._v_odom = v_odom #ggf umrechnen in x',y',theta'
+    
     
 if __name__ == '__main__':
     base_link, end_link = "base_footprint", "UR16/wrist_3_link"

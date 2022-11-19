@@ -67,13 +67,21 @@ class VelocityObserverMiR:
         self._pose_actual = np.zeros(3) #x,y,theta
     
     def calc_velocity(self) -> np.ndarray:
-        """calculates the velocity of the robot based on the odometry and the actual pose. v_
-        # TODO: pose_by_integration richtig berechnen (via theta)
+        """calculates the velocity v_hat of the robot based on the odometry and the actual pose.
         """
         # or use IntegralTrapez?
-        self.pose_by_integration = self.pose_by_integration + self.dt * self._v_hat
+        # self.pose_by_integration = self.pose_by_integration + self.dt * self._v_hat
+        th = self._pose_actual[2] # oder self.pose_by_integration[2]?
+        delta_x = (self._v_hat[0] * np.cos(th) - self._v_hat[1] * np.sin(th)) * self.dt
+        delta_y = (self._v_hat[0] * np.sin(th) + self._v_hat[1] * np.cos(th)) * self.dt
+        delta_th = self._v_hat[2] * self.dt
+        self.pose_by_integration += np.array([delta_x, delta_y, delta_th])
         pose_error = self._pose_actual - self.pose_by_integration
-        self._v_hat = self._v_odom + self.k*pose_error
+        # in odom frame
+        pose_error_odom = np.array([pose_error[0] * np.cos(th) + pose_error[1] * np.sin(th),
+                                    -pose_error[0] * np.sin(th) + pose_error[1] * np.cos(th),
+                                    pose_error[2]])
+        self._v_hat = self._v_odom + self.k*pose_error_odom
         
     @property
     def v_hat(self) -> np.ndarray:

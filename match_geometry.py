@@ -15,7 +15,7 @@ import rospy
 
 class MyPoint(Point):
     def __init__(self, pos=(0.0, 0.0, 0.0)):
-        if isinstance(pos, Point):
+        if isinstance(pos, Point) or type(pos).__name__ == '_geometry_msgs__Point':
             self._asArray = np.array(pos.__reduce__()[2])
         else:
             self._asArray = np.array(pos)
@@ -58,7 +58,7 @@ class MyPointStamped(PointStamped):
 
 class MyOrient(Quaternion):
     def __init__(self, quatern=(0.0, 0.0, 0.0, 1.0)):
-        if isinstance(quatern, Quaternion):
+        if isinstance(quatern, Quaternion) or type(quatern).__name__ == '_geometry_msgs__Quaternion':
             self._asArray = np.array(quatern.__reduce__()[2])
         else:
             self._asArray = np.array(quatern)

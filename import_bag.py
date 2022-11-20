@@ -3,8 +3,8 @@ import rospy
 import rosbag
 import os
 
-# from match_lib.match_geometry import MyPose
-from match_geometry import MyPose
+from match_lib.match_geometry import MyPose
+# from match_geometry import MyPose
 from scipy.spatial.transform import Rotation
 import cv2 as cv
 from cv_bridge import CvBridge
@@ -62,13 +62,21 @@ def mur_write_all_trees_from_bag(bag_file_name: str):
         for t, pose in zip(pose_time, pose_hand_fin):
             fd.write(t.__str__()+";"+pose.position.__reduce__()[2].__str__()[1:-1] + ";" + pose.orientation.__reduce__()[2].__str__()[1:-1]+"\n")
 
-def write_twists(bag_file_name, topic_name: str = "/mur/velocity_command"):
+def get_twists(bag_file_name, topic_name: str = "/mur/velocity_command"):
     twists = []
     times = []
     for topic, msg, t in rosbag.Bag(bag_file_name).read_messages(topics=[topic_name]):
         times.append(t)
         twists.append(msg)
-    with open(bag_file_name+'_cmds.csv','w') as fd:
+    return times, twists
+
+def write_twists(bag_file_name, topic_name: str = "/mur/velocity_command", out_file_name: str = "twist.csv"):
+    twists = []
+    times = []
+    for topic, msg, t in rosbag.Bag(bag_file_name).read_messages(topics=[topic_name]):
+        times.append(t)
+        twists.append(msg)
+    with open(out_file_name,'w') as fd:
         for t, cmd in zip(times, twists):
             fd.write(t.__str__()+";"+cmd.linear.__reduce__()[2].__str__()[1:-1] + ";" + cmd.angular.__reduce__()[2].__str__()[1:-1]+"\n")
 

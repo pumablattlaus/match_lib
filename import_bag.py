@@ -12,8 +12,9 @@ from cv_bridge import CvBridge
 import numpy as np
 # rosrun tf tf_echo miranda/panda/panda_link7 miranda/panda/panda_link8
 
+# TODO: base_footprint->base_link_inertia richtig herum?
 # At time 0.000
-# - Translation: [-0.350, 0.150, -0.350]
+# - Translation: [0.350, 0.150, 0.350]
 # - Rotation: in Quaternion [0.000, 0.000, -0.000, 1.000]
 #             in RPY (radian) [0.000, -0.000, -0.000]
 #             in RPY (degree) [0.000, -0.000, -0.000]

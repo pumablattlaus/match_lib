@@ -3,39 +3,44 @@ import rospy
 import tf
 import geometry_msgs.msg
 from match_geometry import MyPose
+from typing import List
+
+class PosePublisher():
+
+    def __init__(self, target_frames: List[str], source_frames: List[str], rate: float = 10.0):
+        # check if node is already running
+        if rospy.get_name() == "/unnamed":
+            rospy.init_node("pose_publisher")
+        if len(target_frames) != len(source_frames):
+            raise ValueError("target_frames and source_frames must have the same length")
+        self.target_frames = target_frames
+        self.source_frames = source_frames
+        self.pubs = [rospy.Publisher(f'/tf_pose_{source}_TO_{target}', geometry_msgs.msg.Pose, queue_size=10) for source, target in zip(source_frames, target_frames)]
+        self.listener = tf.TransformListener()
+        self.rate = rospy.Rate(10.0)
+
+    def publish_poses(self):
+        while not rospy.is_shutdown():
+            for pub, source, target in zip(self.pubs, self.source_frames, self.target_frames):
+                try:
+                    t, r = self.listener.lookupTransform(source, target, rospy.Time(0))
+                    p = MyPose(t, r)
+                    pub.publish(p)
+                except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                    continue
+            self.rate.sleep()
 
 if __name__ == '__main__':
+    # source_frame = 'map'
+    # rospy.init_node('tf_listener')
+
     target_frame = 'mur/ur/wrist_3_link'
     source_frame = 'mur/ur/base_link'
-    
     source_frame_mir = "mur/mir/base_footprint"
     target_frame_mir = "map"
+    source_frames = [source_frame, source_frame_mir]
+    target_frames = [target_frame, target_frame_mir]
 
-    # source_frame = 'map'
-    rospy.init_node('tf_listener')
+    pose_publisher = PosePublisher(target_frames, source_frames)
+    pose_publisher.publish_poses()
 
-    listener = tf.TransformListener()
-
-    pub = rospy.Publisher('tf_pose', geometry_msgs.msg.Pose,queue_size=1)
-    pub_mir = rospy.Publisher('tf_pose_mir', geometry_msgs.msg.Pose,queue_size=1)
-
-    rate = rospy.Rate(20.0)
-    while not rospy.is_shutdown():
-        try:
-            # listener.waitForTransform(target_frame, source_frame, rospy.Time(0), rospy.Duration(4.0))
-            (trans,rot) = listener.lookupTransform(target_frame, source_frame, rospy.Time(0))
-            pose = MyPose(trans, rot)
-            pub.publish(pose)
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
-            pass
-        try:
-            # listener.waitForTransform(target_frame, source_frame, rospy.Time(0), rospy.Duration(4.0))
-            (trans_mir,rot_mir) = listener.lookupTransform(target_frame_mir, source_frame_mir, rospy.Time(0))
-            pose_mir = MyPose(trans_mir, rot_mir)
-            pub_mir.publish(pose_mir)
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
-            pass
-
-
-
-        rate.sleep()

@@ -68,6 +68,8 @@ class VelocityObserverMiR:
     
     def calc_velocity(self) -> np.ndarray:
         """calculates the velocity v_hat of the robot based on the odometry and the actual pose.
+        velocity is rotated by -theta of actual pose and integrated to get the pose.
+        v_hat is then calculated by using the difference between the actual pose and the pose by integration additionally to v_odom.
         """
         # or use IntegralTrapez?
         # self.pose_by_integration = self.pose_by_integration + self.dt * self._v_hat

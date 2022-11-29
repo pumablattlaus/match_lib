@@ -61,7 +61,6 @@ class VelocityObserverMiR:
         self.dt = 0.0 # is set by setting v_odom
         self.pose_by_integration = self.pose_to_np(init_pose)
         self._v_hat = np.zeros(3) #x',y',theta'
-        self.v_hat_damped = np.zeros(3) #x',y',theta'
         self.k_p = np.array(k_p)
         self.k_d = np.array(k_d)
         self.pose_error_odom_last = np.zeros(3)
@@ -87,12 +86,11 @@ class VelocityObserverMiR:
         pose_error_odom = np.array([pose_error[0] * np.cos(th) + pose_error[1] * np.sin(th),
                                     -pose_error[0] * np.sin(th) + pose_error[1] * np.cos(th),
                                     pose_error[2]])
-        self._v_hat = self._v_odom + self.k_p*pose_error_odom
-        self.v_hat_damped = self.v_hat_damped + self.k_d * (pose_error_odom - self.pose_error_odom_last) / self.dt
+        self._v_hat = self._v_odom + self.k_p*pose_error_odom + self.k_d * (pose_error_odom - self.pose_error_odom_last) / self.dt
     
     def pose_to_np(self, pose: Pose) -> np.ndarray:
         # th = transformations.euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2]
-        theta = 2*np.arccos(pose.orientation.w)
+        theta = -2*np.arccos(pose.orientation.w)
         return np.array([pose.position.x, pose.position.y, theta])    
     @property
     def v_hat(self) -> np.ndarray:

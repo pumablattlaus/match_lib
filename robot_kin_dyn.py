@@ -9,6 +9,7 @@ from pykdl_utils.kdl_kinematics import joint_list_to_kdl
 from pykdl_utils.kdl_parser import kdl_tree_from_urdf_model
 from urdf_parser_py.urdf import Robot
 import numpy as np
+# from simple_pid import PID
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose
@@ -55,18 +56,21 @@ class RobotKinDyn(object):
         return np.array([self.coriolis[row] for row in range(self.coriolis.rows())])
     
 class VelocityObserverMiR:
-    def __init__(self, init_pose: np.ndarray, k: np.ndarray) -> None:
+    def __init__(self, k_p: np.ndarray, k_d: np.ndarray, init_pose: Pose = Pose()) -> None:
         self.old_time = None
-        self.dt = 0.0
-        self.pose_by_integration = init_pose
+        self.dt = 0.0 # is set by setting v_odom
+        self.pose_by_integration = self.pose_to_np(init_pose)
         self._v_hat = np.zeros(3) #x',y',theta'
-        self.k = np.array(k)
+        self.v_hat_damped = np.zeros(3) #x',y',theta'
+        self.k_p = np.array(k_p)
+        self.k_d = np.array(k_d)
+        self.pose_error_odom_last = np.zeros(3)
         
         # set before calc_velocity is called
         self._v_odom = np.zeros(3) #x',y',theta'
         self._pose_actual = np.zeros(3) #x,y,theta
     
-    def calc_velocity(self) -> np.ndarray:
+    def _calc_velocity(self) -> np.ndarray:
         """calculates the velocity v_hat of the robot based on the odometry and the actual pose.
         velocity is rotated by -theta of actual pose and integrated to get the pose.
         v_hat is then calculated by using the difference between the actual pose and the pose by integration additionally to v_odom.
@@ -83,8 +87,13 @@ class VelocityObserverMiR:
         pose_error_odom = np.array([pose_error[0] * np.cos(th) + pose_error[1] * np.sin(th),
                                     -pose_error[0] * np.sin(th) + pose_error[1] * np.cos(th),
                                     pose_error[2]])
-        self._v_hat = self._v_odom + self.k*pose_error_odom
-        
+        self._v_hat = self._v_odom + self.k_p*pose_error_odom
+        self.v_hat_damped = self.v_hat_damped + self.k_d * (pose_error_odom - self.pose_error_odom_last) / self.dt
+    
+    def pose_to_np(self, pose: Pose) -> np.ndarray:
+        # th = transformations.euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2]
+        theta = 2*np.arccos(pose.orientation.w)
+        return np.array([pose.position.x, pose.position.y, theta])    
     @property
     def v_hat(self) -> np.ndarray:
         # return self._v_hat[[0,2]] #x',theta'
@@ -96,9 +105,8 @@ class VelocityObserverMiR:
     
     @pose_actual.setter
     def pose_actual(self, pose_actual: Pose) -> None:
-        # theta = 2*np.arctan2(pose_actual.orientation.z, pose_actual.orientation.w)
-        theta = 2*np.arccos(pose_actual.orientation.w)
-        self._pose_actual = np.array([pose_actual.position.x, pose_actual.position.y, theta])
+        self._pose_actual = self.pose_to_np(pose_actual)
+        
         
     @property
     def v_odom(self) -> np.ndarray:
@@ -112,7 +120,7 @@ class VelocityObserverMiR:
             self.old_time = msg_time
             # umrechnen in x',y',theta':
             self._v_odom = np.array([v_odom.twist.twist.linear.x,0,v_odom.twist.twist.angular.z])
-            self.calc_velocity()
+            self._calc_velocity()
         except TypeError: # first time
             self.old_time = msg_time
         

@@ -14,6 +14,8 @@ import numpy as np
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose
 
+import rospy
+
 class RobotKinDyn(object):
     def __init__(self, base_link: str, end_link: str, urdf_file_name: Optional[str], urdf_string: Optional[str]) -> None:
         if urdf_file_name is not None:
@@ -56,10 +58,11 @@ class RobotKinDyn(object):
         return np.array([self.coriolis[row] for row in range(self.coriolis.rows())])
     
 class VelocityObserverMiR:
-    def __init__(self, k_p: np.ndarray, k_d: np.ndarray, init_pose: Pose = Pose()) -> None:
+    def __init__(self, k_p: np.ndarray, k_d: np.ndarray, init_pose: Pose = Pose(), max_vel=1.0) -> None:
+        self.max_vel = max_vel
         self.old_time = None
         self.dt = 0.0 # is set by setting v_odom
-        self.pose_by_integration = self.pose_to_np(init_pose)
+        self.pose_by_integration = self.pose_to_np(init_pose) #x,y,theta
         self._v_hat = np.zeros(3) #x',y',theta'
         self.k_p = np.array(k_p)
         self.k_d = np.array(k_d)
@@ -67,7 +70,7 @@ class VelocityObserverMiR:
         
         # set before calc_velocity is called
         self._v_odom = np.zeros(3) #x',y',theta'
-        self._pose_actual = np.zeros(3) #x,y,theta
+        self._pose_actual = self.pose_by_integration  #x,y,theta
     
     def _calc_velocity(self) -> np.ndarray:
         """calculates the velocity v_hat of the robot based on the odometry and the actual pose.
@@ -82,16 +85,24 @@ class VelocityObserverMiR:
         delta_th = self._v_hat[2] * self.dt
         self.pose_by_integration += np.array([delta_x, delta_y, delta_th])
         pose_error = self._pose_actual - self.pose_by_integration
+        rospy.logdebug(f'VelObserver pose_error: {pose_error}')
         # in odom frame
         pose_error_odom = np.array([pose_error[0] * np.cos(th) + pose_error[1] * np.sin(th),
                                     -pose_error[0] * np.sin(th) + pose_error[1] * np.cos(th),
                                     pose_error[2]])
-        self._v_hat = self._v_odom + self.k_p*pose_error_odom + self.k_d * (pose_error_odom - self.pose_error_odom_last) / self.dt
+        # Todo: add damped influence of v_odom: v_hat_odom = v_odom + k_d * (v_odom_last - v_odom) / dt
+        v = self._v_odom + self.k_p*pose_error_odom + self.k_d * (pose_error_odom - self.pose_error_odom_last) / self.dt
+        v_max = v.max()
+        if v_max<self.max_vel:
+            self._v_hat = v
+        else:
+            self._v_hat = self.max_vel * v / v_max
     
     def pose_to_np(self, pose: Pose) -> np.ndarray:
         # th = transformations.euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2]
         theta = -2*np.arccos(pose.orientation.w)
-        return np.array([pose.position.x, pose.position.y, theta])    
+        return np.array([pose.position.x, pose.position.y, theta])
+     
     @property
     def v_hat(self) -> np.ndarray:
         # return self._v_hat[[0,2]] #x',theta'

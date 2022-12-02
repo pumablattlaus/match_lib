@@ -2,6 +2,7 @@
 import rospy
 import tf
 import geometry_msgs.msg
+from geometry_msgs.msg import Pose, Vector3Stamped
 from match_lib.match_geometry import MyPose
 from typing import List
 
@@ -49,9 +50,53 @@ class PosePublisher():
                 continue
         return self.poses
 
+class RotatePosePublisher():
+
+    def __init__(self, target_frame, source_frame, topic_sub, topic_pub, tf_timeout=10):
+        # super().__init__(tf_timeout) # if we want to inherit from TfListener
+        # check if node is already running
+        if rospy.get_name() == "/unnamed":
+            rospy.init_node("pose_publisher")
+
+        self.listener = tf.TransformListener(tf_timeout)
+        self.target_frame = target_frame
+        self.source_frame = source_frame
+
+        self.pub = rospy.Publisher(topic_pub, Pose, queue_size=10)
+        self.sub = rospy.Subscriber(topic_sub, Pose, self.callback)
+        self.vector = Vector3Stamped()
+        self.vector.header.frame_id = self.source_frame
+
+
+    def callback(self, msg: Pose):
+        if msg is None:
+            return
+        self.vector.header.stamp = rospy.Time()
+
+        msg.position = self.rotate_xyz(msg.position)
+        msg.orientation = self.rotate_xyz(msg.orientation)
+        self.pub.publish(msg)
+
+
+    def rotate_xyz(self, msg):
+        self.vector.vector.x = msg.x
+        self.vector.vector.y = msg.y
+        self.vector.vector.z = msg.z
+        try:
+            vector_out = self.listener.transformVector3(self.target_frame, self.vector)
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+            rospy.loginfo(e)
+            return
+        msg.x, msg.y, msg.z = vector_out.vector.x, vector_out.vector.y, vector_out.vector.z
+        return msg
+
+        
+
 if __name__ == '__main__':
     # source_frame = 'map'
     # rospy.init_node('tf_listener')
+
+    rospy.set_param('/use_sim_time', True)
 
     target_frame = 'mur/ur/wrist_3_link'
     source_frame = 'mur/ur/base_link'
@@ -61,5 +106,6 @@ if __name__ == '__main__':
     target_frames = [target_frame, target_frame_mir]
 
     pose_publisher = PosePublisher(target_frames, source_frames)
+    rotPos = RotatePosePublisher("/map", pose_publisher.source_frames[0], pose_publisher.pubs[0].name, "/mur/ur/target_pose_rotated")
     pose_publisher.publish_poses()
 

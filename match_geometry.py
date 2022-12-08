@@ -107,7 +107,7 @@ class MyPose(Pose):
         return rotateVector(vec, rot)
 
 
-def rotateVector(vec=(0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0), transpose=False):
+def rotateVector(vec=(0.0, 0.0, 0.0, 1.0), rot=(0.0, 0.0, 0.0, 1.0), transpose=False):
     if transpose:
         rot_conj = rot
         rot = transformations.quaternion_conjugate(rot_conj)

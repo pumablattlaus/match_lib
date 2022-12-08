@@ -6,7 +6,7 @@ import numpy as np
 from std_msgs.msg import Header
 from geometry_msgs.msg import PoseStamped, Twist, TwistStamped,Pose
 from gazebo_msgs.msg import ModelStates
-from .filter_img import LowPassFilter
+from .filter import LowPassFilter
 
 class GazeboPose:
     def __init__(self, model_name='mur216'):

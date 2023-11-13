@@ -58,7 +58,17 @@ def getVector_eef(q):
     r = Vector3(-rx, -ry, rz) # in base_link frame
     return r
 
+def getVector_eef_r(q):
+    """Get vector from base_link to end effector (for right arm)
 
+    Args:
+        q (list): joint angles
 
+    Returns:
+        Vector3: last column of T matrix
+    """
+    r = getVector_eef(q)
+    r.x, r.y = -r.x, -r.y
+    return r
 if __name__ == "__main__":
     pass

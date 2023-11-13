@@ -4,9 +4,6 @@
 # see also: http://docs.ros.org/en/hydro/api/orocos_kdl/html/classKDL_1_1ChainDynParam.html#a616876214cb26793cedeed01e5093b3a
 
 from typing import Optional
-import PyKDL as kdl
-from pykdl_utils.kdl_kinematics import joint_list_to_kdl
-from pykdl_utils.kdl_parser import kdl_tree_from_urdf_model
 from urdf_parser_py.urdf import Robot
 import numpy as np
 # from simple_pid import PID
@@ -18,6 +15,10 @@ import rospy
 
 class RobotKinDyn(object):
     def __init__(self, base_link: str, end_link: str, urdf_file_name: Optional[str], urdf_string: Optional[str]) -> None:
+        import PyKDL as kdl
+        from pykdl_utils.kdl_kinematics import joint_list_to_kdl
+        from pykdl_utils.kdl_parser import kdl_tree_from_urdf_model
+
         if urdf_file_name is not None:
             with open(urdf_file_name, 'r') as f:
                 urdf_string = f.read()
@@ -85,7 +86,7 @@ class VelocityObserverMiR:
         delta_th = self._v_hat[2] * self.dt
         self.pose_by_integration += np.array([delta_x, delta_y, delta_th])
         pose_error = self._pose_actual - self.pose_by_integration
-        rospy.logdebug(f'VelObserver pose_error: {pose_error}')
+        rospy.logdebug_throttle(1, f'VelObserver pose_error: {pose_error}')
         # in odom frame
         pose_error_odom = np.array([pose_error[0] * np.cos(th) + pose_error[1] * np.sin(th),
                                     -pose_error[0] * np.sin(th) + pose_error[1] * np.cos(th),
@@ -137,7 +138,7 @@ class VelocityObserverMiR:
     
 if __name__ == '__main__':
     base_link, end_link = "base_footprint", "UR16/wrist_3_link"
-    urdf_file_name = "/home/rosmatch/Hee/catkin_hee/src/nullraum_sim/urdf/mur_with_mir_joints.urdf"
+    urdf_file_name = "/home/rosmatch/Hee/catkin_hee/src/optimization_algo/urdf/mur_with_mir_joints.urdf"
     f = open(urdf_file_name, 'r')
     robot = Robot.from_xml_string(f.read())
     f.close()

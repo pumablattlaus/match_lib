@@ -17,8 +17,12 @@ def getJacobianPlatformWithoutEEF():
     J[5,1]=1
     return J
 
-def getJacobianPlatformWithEEF():
-    """get Jacobian of platform with coordinates x,y,theta
+def getJacobianPlatformWithEEF(rx, ry):
+    """get Jacobian of platform with coordinates x,y,theta. Transforms x_p', y_p', theta_p' to cartesian coordinates of EE
+    
+    Args:
+        rx (float): x coordinate of EE relativ to mur_base_link
+        ry (float): y coordinate of EE relativ to mur_base_link
 
     Returns:
         Jacobian (np.array((6,3)))
@@ -26,6 +30,8 @@ def getJacobianPlatformWithEEF():
     J = np.zeros((6, 3))
     J[0,0]=1
     J[1,1]=1
+    J[0,2]=-ry
+    J[1,2]=rx
     J[5,2]=1
     return J
 

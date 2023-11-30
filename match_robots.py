@@ -95,6 +95,7 @@ class PandaGoals(object):
 
 
 class PandaMove(object):
+    from .panda_grasping import *
     def __init__(self, group_name="panda_arm", ns='', robot_description="robot_description", listener=None):
         from .panda_grasping import PandaGripper
         moveit_commander.roscpp_initialize([])

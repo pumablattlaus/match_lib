@@ -11,7 +11,6 @@ from actionlib_msgs.msg import *
 import std_msgs.msg as std_msg
 import numpy as np
 # import quaternion
-from .panda_grasping import *
 from .match_geometry import *
 from .robot_mats.jacobians.jacobian_ur_16_eef import getJacobianUr16_base_link_inertiaUr16_wrist_3_link as getJacobianManipulator
 from .robot_mats.transformations.transform_ur16_base_link_eef import getTransform as getTransformManipulator, getVector_eef
@@ -96,6 +95,7 @@ class PandaGoals(object):
 
 
 class PandaMove(object):
+    from .panda_grasping import *
     def __init__(self, group_name="panda_arm", ns='', robot_description="robot_description", listener=None):
         moveit_commander.roscpp_initialize([])
         self.ns = ns

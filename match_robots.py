@@ -44,9 +44,12 @@ class Joints():
 
     def cb_joint_states(self, msg=JointState()):
         for i in range(len(self.joint_names)):
-            idx=msg.name.index(self.joint_names[i])
-            self.q[i] = msg.position[idx]
-            self.q_dot[i] = msg.velocity[idx]
+            try:
+                idx=msg.name.index(self.joint_names[i])
+                self.q[i] = msg.position[idx]
+                self.q_dot[i] = msg.velocity[idx]
+            except ValueError:
+                pass
 
     def getTransformation(self):
         return self.T(self.q)

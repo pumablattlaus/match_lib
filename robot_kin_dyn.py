@@ -86,11 +86,12 @@ class VelocityObserverMiR:
         delta_th = self._v_hat[2] * self.dt
         self.pose_by_integration += np.array([delta_x, delta_y, delta_th])
         pose_error = self._pose_actual - self.pose_by_integration
-        rospy.logdebug_throttle(1, f'VelObserver pose_error: {pose_error}')
         # in odom frame
         pose_error_odom = np.array([pose_error[0] * np.cos(th) + pose_error[1] * np.sin(th),
                                     -pose_error[0] * np.sin(th) + pose_error[1] * np.cos(th),
                                     pose_error[2]])
+        rospy.logdebug_throttle(1, f'VelObserver pose_error: {pose_error}')
+        rospy.logdebug_throttle(1, f'VelObserver pose_error_odom: {pose_error_odom}')
         # Todo: add damped influence of v_odom: v_hat_odom = v_odom + k_d * (v_odom_last - v_odom) / dt
         v = self._v_odom + self.k_p*pose_error_odom + self.k_d * (pose_error_odom - self.pose_error_odom_last) / self.dt
         v_max = v.max()
@@ -101,7 +102,7 @@ class VelocityObserverMiR:
     
     def pose_to_np(self, pose: Pose) -> np.ndarray:
         # th = transformations.euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2]
-        theta = -2*np.arccos(pose.orientation.w)
+        theta = 2*np.arccos(pose.orientation.w)
         return np.array([pose.position.x, pose.position.y, theta])
      
     @property

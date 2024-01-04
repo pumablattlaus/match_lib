@@ -11,6 +11,8 @@ import numpy as np
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose
 
+from std_msgs.msg import Float32, Float32MultiArray, MultiArrayDimension
+
 import rospy
 
 class RobotKinDyn(object):
@@ -72,6 +74,23 @@ class VelocityObserverMiR:
         # set before calc_velocity is called
         self._v_odom = np.zeros(3) #x',y',theta'
         self._pose_actual = self.pose_by_integration  #x,y,theta
+        # self._pub_th_debug = rospy.Publisher('debug_vel_observer/th', Float32, queue_size=1)
+        self._pub_pose_actual = rospy.Publisher('debug_vel_observer/pose_actual', Float32MultiArray, queue_size=1)
+        self._pub_pose_int = rospy.Publisher('debug_vel_observer/pose_integrated', Float32MultiArray, queue_size=1)
+        self._pose_actual_msg = Float32MultiArray()
+        self._pose_int_msg = Float32MultiArray()
+
+        self._pose_actual_msg.layout.dim = [MultiArrayDimension()]
+        self._pose_actual_msg.layout.dim[0].label = "pose_actual"
+        self._pose_actual_msg.layout.dim[0].size = 3
+        self._pose_actual_msg.layout.dim[0].stride = 3
+        self._pose_actual_msg.data = [0.0]*3
+
+        self._pose_int_msg.layout.dim = [MultiArrayDimension()]
+        self._pose_int_msg.layout.dim[0].label = "pose_int"
+        self._pose_int_msg.layout.dim[0].size = 3
+        self._pose_int_msg.layout.dim[0].stride = 3
+        self._pose_int_msg.data = [0.0]*3
     
     def _calc_velocity(self) -> np.ndarray:
         """calculates the velocity v_hat of the robot based on the odometry and the actual pose.
@@ -81,17 +100,17 @@ class VelocityObserverMiR:
         # or use IntegralTrapez?
         # self.pose_by_integration = self.pose_by_integration + self.dt * self._v_hat
         th = self._pose_actual[2] # oder self.pose_by_integration[2]?
-        delta_x = (self._v_hat[0] * np.cos(th) - self._v_hat[1] * np.sin(th)) * self.dt
-        delta_y = (self._v_hat[0] * np.sin(th) + self._v_hat[1] * np.cos(th)) * self.dt
+        delta_x = (self._v_hat[0] * np.cos(th) + self._v_hat[1] * np.sin(-th)) * self.dt
+        delta_y = (self._v_hat[0] * np.sin(-th) + self._v_hat[1] * np.cos(th)) * self.dt
         delta_th = self._v_hat[2] * self.dt
         self.pose_by_integration += np.array([delta_x, delta_y, delta_th])
         pose_error = self._pose_actual - self.pose_by_integration
-        # in odom frame
-        pose_error_odom = np.array([pose_error[0] * np.cos(th) + pose_error[1] * np.sin(th),
-                                    -pose_error[0] * np.sin(th) + pose_error[1] * np.cos(th),
+        # in odom frame # TODO: th=-th?
+        pose_error_odom = np.array([pose_error[0] * np.cos(th) + pose_error[1] * np.sin(-th),
+                                    pose_error[0] * np.sin(-th) + pose_error[1] * np.cos(th),
                                     pose_error[2]])
-        rospy.logdebug_throttle(1, f'VelObserver pose_error: {pose_error}')
-        rospy.logdebug_throttle(1, f'VelObserver pose_error_odom: {pose_error_odom}')
+        rospy.loginfo_throttle(0.1, f'VelObserver pose_error: {pose_error}')
+        rospy.loginfo_throttle(0.1, f'VelObserver pose_error_odom: {pose_error_odom}')
         # Todo: add damped influence of v_odom: v_hat_odom = v_odom + k_d * (v_odom_last - v_odom) / dt
         v = self._v_odom + self.k_p*pose_error_odom + self.k_d * (pose_error_odom - self.pose_error_odom_last) / self.dt
         v_max = v.max()
@@ -99,6 +118,11 @@ class VelocityObserverMiR:
             self._v_hat = v
         else:
             self._v_hat = self.max_vel * v / v_max
+
+        # self._pose_actual_msg.data = self._pose_actual
+        # self._pose_int_msg.data = self.pose_by_integration
+        # self._pub_pose_actual.publish(self._pose_actual_msg)
+        # self._pub_pose_int.publish(self._pose_int_msg)
     
     def pose_to_np(self, pose: Pose) -> np.ndarray:
         # th = transformations.euler_from_quaternion([pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w])[2]
@@ -117,6 +141,7 @@ class VelocityObserverMiR:
     @pose_actual.setter
     def pose_actual(self, pose_actual: Pose) -> None:
         self._pose_actual = self.pose_to_np(pose_actual)
+        rospy.loginfo_throttle(0.5, f'VelObserver pose_actual: {self._pose_actual}')
         
         
     @property
